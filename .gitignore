@@ -3,7 +3,15 @@
 /.pnp
 .pnp.js
 
-# Environment files
+# Testing
+/coverage
+
+# Next.js build output
+/.next/
+/out/
+/build
+
+# Environment variables
 .env
 .env.local
 .env.development.local
@@ -11,50 +19,26 @@
 .env.production.local
 .env*.local
 
-# Build outputs
-/.next/
-/out/
-/build
-/dist
-
 # Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
 
-# VS Code specific files
-.vscode/*
-!.vscode/extensions.json
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-
-# misc
-.DS_Store
-*.pem
-.idea/
+# IDEs and editors
+/.idea
+/.vscode
 *.swp
 *.swo
-
-# Testing
-/coverage
+.DS_Store
+*.pem
 
 # Vercel
 .vercel
+.turbo
 
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
 
-# PWA files
-**/public/precache.*.*.js
-**/public/sw.js
-**/public/workbox-*.js
-**/public/worker-*.js
-**/public/fallback-*.js
-**/public/precache.*.*.js.map
-**/public/sw.js.map
-**/public/workbox-*.js.map
-**/public/worker-*.js.map
-**/public/fallback-*.js.map 
+# Local Netlify folder
+.netlify 

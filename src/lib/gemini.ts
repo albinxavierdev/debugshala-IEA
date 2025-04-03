@@ -517,36 +517,20 @@ function simulateGeminiResponse(prompt: string, category: string, count: number)
         timeLimit: 60
       }
     );
-  } else if (category.startsWith('problem_solving')) {
+  } else if (category === 'problem_solving') {
     questions.push(
       {
         id: `${category}-1`,
         type: 'mcq',
-        question: `As a ${degree} graduate working on a complex ${interests} problem, which approach would be most effective?`,
+        question: `As a team lead for a project where ${degree} knowledge is important, what's the best approach when you discover that project requirements have changed significantly and your team has already started work?`,
         options: [
-          'Immediately implement the first solution that comes to mind',
-          'Break down the problem, analyze root causes, generate multiple solutions, evaluate options, and implement the best approach',
-          'Delegate the problem to someone else',
-          'Apply the same solution that worked for a somewhat similar problem'
+          "Rigidly stick to the original plan since you've already started work",
+          "Adapt the plan iteratively while keeping stakeholders informed",
+          "Change direction completely without consulting the team",
+          "Ignore the requirements change and continue as planned"
         ],
-        correctAnswer: 'Break down the problem, analyze root causes, generate multiple solutions, evaluate options, and implement the best approach',
-        explanation: 'A structured problem-solving approach involving root cause analysis and consideration of multiple solutions leads to more effective outcomes.',
-        difficulty: 'medium',
-        category: 'problem_solving',
-        timeLimit: 60
-      },
-      {
-        id: `${category}-2`,
-        type: 'mcq',
-        question: `In a ${interests} project, you encounter an unexpected technical issue that wasn't covered in your ${degree} studies. What's your best course of action?`,
-        options: [
-          'Tell your manager it\'s impossible to solve',
-          'Pretend the issue doesn\'t exist and work around it',
-          'Research potential solutions, consult with colleagues, test approaches methodically, and document the resolution',
-          'Keep trying random solutions until something works'
-        ],
-        correctAnswer: 'Research potential solutions, consult with colleagues, test approaches methodically, and document the resolution',
-        explanation: 'Effective problem-solving combines research, collaboration, systematic testing, and knowledge sharing.',
+        correctAnswer: "Adapt the plan iteratively while keeping stakeholders informed",
+        explanation: "Effective problem solving in professional settings requires adaptability while maintaining communication with all stakeholders.",
         difficulty: 'medium',
         category: 'problem_solving',
         timeLimit: 60
