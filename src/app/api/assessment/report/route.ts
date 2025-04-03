@@ -11,6 +11,34 @@ const generateMockReport = (formData: FormData, scores: AssessmentResult['scores
     timestamp: new Date().toISOString(),
     formData,
     scores,
+    sectionDetails: {
+      aptitude: {
+        totalQuestions: 10,
+        correctAnswers: 7,
+        accuracy: 70,
+        strengths: ["Logical reasoning", "Pattern recognition"],
+        weakAreas: ["Numerical computation", "Spatial reasoning"]
+      },
+      programming: {
+        totalQuestions: 10,
+        correctAnswers: 6,
+        accuracy: 60,
+        strengths: ["Algorithms", "Data structures"],
+        weakAreas: ["System design", "Optimization"]
+      },
+      employability: {
+        totalQuestions: 10,
+        correctAnswers: 8,
+        accuracy: 80,
+        softSkillsScore: 75,
+        professionalSkillsScore: 70,
+        aiLiteracyScore: 65,
+        strengths: ["Communication", "Adaptability"],
+        weakAreas: ["Leadership", "Project management"]
+      }
+    },
+    outcome: "Pass",
+    skillReadinessLevel: "Intermediate",
     recommendations: {
       skills: [
         "Advanced algorithm optimization",
@@ -32,7 +60,46 @@ const generateMockReport = (formData: FormData, scores: AssessmentResult['scores
         "Technical Lead",
         "DevOps Engineer",
         "Backend Developer"
-      ]
+      ],
+      aptitudeResources: {
+        books: [
+          "Cracking the Coding Interview",
+          "Problem Solving Strategies",
+          "Thinking Fast and Slow"
+        ],
+        platforms: [
+          "LeetCode",
+          "HackerRank",
+          "CodeSignal"
+        ],
+        practiceGuide: "Focus on algorithmic thinking and pattern recognition"
+      },
+      programmingResources: {
+        courses: [
+          "Data Structures and Algorithms",
+          "System Design Fundamentals",
+          "Clean Code Principles"
+        ],
+        platforms: [
+          "GitHub",
+          "Stack Overflow",
+          "Dev.to"
+        ],
+        topicsToStudy: ["Advanced algorithms", "Design patterns", "Architecture"]
+      },
+      employabilityResources: {
+        courses: [
+          "Professional Communication",
+          "Team Leadership",
+          "Project Management"
+        ],
+        activities: [
+          "Join open source projects",
+          "Participate in hackathons",
+          "Attend tech meetups"
+        ]
+      },
+      nextAction: "Focus on strengthening technical fundamentals while building real-world projects"
     },
     detailedAnalysis: {
       strengths: [
@@ -55,7 +122,13 @@ const generateMockReport = (formData: FormData, scores: AssessmentResult['scores
         "Advanced architectural patterns",
         "Technical documentation skills",
         "DevOps and deployment automation"
-      ]
+      ],
+      industryComparison: {
+        aptitude: 70,
+        programming: 65,
+        softSkills: 75,
+        overallGap: 25
+      }
     }
   };
 };
@@ -115,15 +188,64 @@ export async function POST(request: Request) {
     {
       "userId": "${userId || 'user-' + Math.floor(Math.random() * 1000000)}",
       "timestamp": "${new Date().toISOString()}",
+      "sectionDetails": {
+        "aptitude": {
+          "totalQuestions": 10,
+          "correctAnswers": 7,
+          "accuracy": 70,
+          "strengths": ["strength1", "strength2"],
+          "weakAreas": ["weakness1", "weakness2"]
+        },
+        "programming": {
+          "totalQuestions": 10,
+          "correctAnswers": 6,
+          "accuracy": 60,
+          "strengths": ["strength1", "strength2"],
+          "weakAreas": ["weakness1", "weakness2"]
+        },
+        "employability": {
+          "totalQuestions": 10,
+          "correctAnswers": 8,
+          "accuracy": 80,
+          "softSkillsScore": 75,
+          "professionalSkillsScore": 70,
+          "aiLiteracyScore": 65,
+          "strengths": ["strength1", "strength2"],
+          "weakAreas": ["weakness1", "weakness2"]
+        }
+      },
+      "outcome": "Pass",
+      "skillReadinessLevel": "Intermediate",
       "recommendations": {
-        "skills": ["skill1", "skill2", ...],
-        "courses": ["course1", "course2", ...],
-        "careerPaths": ["path1", "path2", ...]
+        "skills": ["skill1", "skill2"],
+        "courses": ["course1", "course2"],
+        "careerPaths": ["path1", "path2"],
+        "aptitudeResources": {
+          "books": ["book1", "book2"],
+          "platforms": ["platform1", "platform2"],
+          "practiceGuide": "guide text"
+        },
+        "programmingResources": {
+          "courses": ["course1", "course2"],
+          "platforms": ["platform1", "platform2"],
+          "topicsToStudy": ["topic1", "topic2"]
+        },
+        "employabilityResources": {
+          "courses": ["course1", "course2"],
+          "activities": ["activity1", "activity2"]
+        },
+        "nextAction": "action text"
       },
       "detailedAnalysis": {
-        "strengths": ["strength1", "strength2", ...],
-        "areasForImprovement": ["area1", "area2", ...],
-        "skillGaps": ["gap1", "gap2", ...]
+        "strengths": ["strength1", "strength2"],
+        "areasForImprovement": ["area1", "area2"],
+        "skillGaps": ["gap1", "gap2"],
+        "industryComparison": {
+          "aptitude": 70,
+          "programming": 65,
+          "softSkills": 75,
+          "overallGap": 25
+        }
       }
     }`;
 
@@ -150,8 +272,65 @@ export async function POST(request: Request) {
           timestamp: reportData.timestamp || new Date().toISOString(),
           formData: sanitizedFormData,
           scores,
-          recommendations: reportData.recommendations,
-          detailedAnalysis: reportData.detailedAnalysis
+          sectionDetails: reportData.sectionDetails || {
+            aptitude: {
+              totalQuestions: 10,
+              correctAnswers: 7,
+              accuracy: 70,
+              strengths: ["Logical reasoning", "Pattern recognition"],
+              weakAreas: ["Numerical computation", "Spatial reasoning"]
+            },
+            programming: {
+              totalQuestions: 10,
+              correctAnswers: 6,
+              accuracy: 60,
+              strengths: ["Algorithms", "Data structures"],
+              weakAreas: ["System design", "Optimization"]
+            },
+            employability: {
+              totalQuestions: 10,
+              correctAnswers: 8,
+              accuracy: 80,
+              softSkillsScore: 75,
+              professionalSkillsScore: 70,
+              aiLiteracyScore: 65,
+              strengths: ["Communication", "Adaptability"],
+              weakAreas: ["Leadership", "Project management"]
+            }
+          },
+          outcome: reportData.outcome || "Pass",
+          skillReadinessLevel: reportData.skillReadinessLevel || "Intermediate",
+          recommendations: reportData.recommendations || {
+            skills: ["Algorithm optimization", "Data structures", "System design"],
+            courses: ["Data Structures & Algorithms", "System Design", "Web Development"],
+            careerPaths: ["Software Engineer", "Full Stack Developer", "Backend Developer"],
+            aptitudeResources: {
+              books: ["Cracking the Coding Interview", "Problem Solving Strategies"],
+              platforms: ["LeetCode", "HackerRank"],
+              practiceGuide: "Focus on algorithmic thinking"
+            },
+            programmingResources: {
+              courses: ["Data Structures", "System Design"],
+              platforms: ["GitHub", "Stack Overflow"],
+              topicsToStudy: ["Algorithms", "Design patterns"]
+            },
+            employabilityResources: {
+              courses: ["Professional Communication", "Team Leadership"],
+              activities: ["Join open source projects", "Attend tech meetups"]
+            },
+            nextAction: "Focus on strengthening fundamentals"
+          },
+          detailedAnalysis: reportData.detailedAnalysis || {
+            strengths: ["Problem-solving", "Technical fundamentals"],
+            areasForImprovement: ["Advanced algorithms", "System design"],
+            skillGaps: ["Performance optimization", "Distributed systems"],
+            industryComparison: {
+              aptitude: 70,
+              programming: 65,
+              softSkills: 75,
+              overallGap: 25
+            }
+          }
         };
         
         return NextResponse.json(report);
