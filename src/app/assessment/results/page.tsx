@@ -200,61 +200,38 @@ const fallbackResult: AssessmentResult = {
 
 export default function ResultsPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const localStorage = getLocalStorage();
+  const storedScores = localStorage ? JSON.parse(localStorage.getItem('assessmentScores') || 'null') : null;
+  const storedFormData = localStorage ? JSON.parse(localStorage.getItem('formData') || 'null') : null;
+  const userId = localStorage ? localStorage.getItem('userId') || 'user-' + Math.floor(Math.random() * 1000000) : 'fallback-user';
+  
   const [report, setReport] = useState<AssessmentResult | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!storedScores || !storedFormData) {
+      router.push('/assessment');
+      return;
+    }
+
     const loadReport = async () => {
       try {
-        // Try to get report from assessment service first
-        const serviceReport = assessmentService.getAssessmentResults();
-        
-        if (serviceReport) {
-          setReport(serviceReport);
-          setLoading(false);
-          return;
-        }
-        
-        // Try to get scores from localStorage as fallback
-        const storage = getLocalStorage();
-        if (storage) {
-          const scoresJson = storage.getItem('debugshala_assessment_scores');
-          
-          if (scoresJson) {
-            try {
-              const scores = JSON.parse(scoresJson);
-              
-              // Create a minimal report with the scores
-              const minimalReport: AssessmentResult = {
-                ...fallbackResult,
-                scores,
-                timestamp: new Date().toISOString()
-              };
-              
-              setReport(minimalReport);
-              setLoading(false);
-              return;
-            } catch (parseError) {
-              console.error('Error parsing scores from localStorage:', parseError);
-            }
-          }
-        }
-        
-        // If no data is available, use complete fallback
-        setReport(fallbackResult);
-        
+        setLoading(true);
+        const result = await assessmentService.generateAssessmentReport(storedScores);
+        setReport(result);
       } catch (error) {
         console.error('Error loading report:', error);
         
-        // Use fallback data
+        // Use static fallback
+        console.log('Using static fallback report');
         setReport(fallbackResult);
       } finally {
-    setLoading(false);
+        setLoading(false);
       }
     };
 
     loadReport();
-  }, []);
+  }, [router, storedScores, storedFormData, userId]);
 
   const calculateLevel = (score: number) => {
     if (score >= 85) return { text: 'Expert', color: 'bg-green-600', textColor: 'text-green-600' };
