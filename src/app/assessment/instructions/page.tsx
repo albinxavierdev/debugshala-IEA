@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Brain, Code, Briefcase, AlertTriangle, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Clock, Brain, Code, Briefcase, AlertTriangle, ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
+import { assessmentService } from '@/lib/assessment-service';
 
 // Helper to safely access localStorage (only in browser)
 const getLocalStorage = () => {
@@ -169,25 +170,21 @@ export default function InstructionsPage() {
                   Back to Registration
                 </Button>
                 
-                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                  <Button
-                    onClick={handleStartTest}
-                    disabled={loading}
-                    className="gap-1"
-                  >
-                    {loading ? (
-                      <>
-                        <span className="animate-spin h-4 w-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-1" />
-                        Preparing Test...
-                      </>
-                    ) : (
-                      <>
-                        Start Assessment
-                        <ArrowRight className="h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                </motion.div>
+                <Button
+                  onClick={handleStartTest}
+                  className="w-full sm:w-auto"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading...
+                    </>
+                  ) : (
+                    <>
+                      Start Assessment <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
               </div>
             </CardContent>
           </Card>

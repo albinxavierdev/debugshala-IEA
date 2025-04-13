@@ -1,6 +1,7 @@
 import { FormData, AssessmentResult, Question, QuestionType, EmployabilityCategory } from '@/types/assessment';
-import { supabase } from './supabase';
-import { v4 as uuidv4 } from 'uuid';
+import { validateFormData, validateScores, sanitizeObject, ValidationError } from '@/lib/validation';
+import { getCurrentUser } from './supabase-auth';
+import { generateUUID, isValidUUID } from './uuid';
 
 // Helper to safely access localStorage (only in browser)
 const getLocalStorage = () => {
@@ -10,18 +11,34 @@ const getLocalStorage = () => {
   return undefined;
 };
 
+// Database operation error class for better error handling
+class DatabaseError extends Error {
+  constructor(message: string, public originalError: any) {
+    super(message);
+    this.name = 'DatabaseError';
+  }
+}
+
+// Authentication error class
+class AuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthError';
+  }
+}
+
+// Using OpenAI as the only provider
+export type LLMProvider = 'openai';
+
 class AssessmentService {
   private static instance: AssessmentService;
   private formData: FormData | null = null;
   private assessmentResults: AssessmentResult | null = null;
   private userId: string | null = null;
+  private readonly provider: LLMProvider = 'openai';
 
   private constructor() {
-    // Safely access localStorage only in browser environment
-    const storage = getLocalStorage();
-    if (storage) {
-      this.userId = storage.getItem('debugshala_user_id') || null;
-    }
+    // Auth-based user identification will happen in initUser()
   }
 
   static getInstance(): AssessmentService {
@@ -31,40 +48,121 @@ class AssessmentService {
     return AssessmentService.instance;
   }
 
-  async setFormData(data: FormData) {
-    this.formData = data;
-    
+  getProvider(): LLMProvider {
+    return this.provider;
+  }
+
+  // Create a helper method to generate and set an anonymous user ID
+  private ensureUserId(): string {
+    if (!this.userId) {
+      // Generate a proper UUID v4 for anonymous users
+      const uuid = generateUUID();
+      console.log('Creating anonymous user ID (UUID format):', uuid);
+      this.userId = uuid;
+      
+      // Store in localStorage for future use
+      const storage = getLocalStorage();
+      if (storage) {
+        storage.setItem('debugshala_user_id', uuid);
+      }
+    }
+    return this.userId;
+  }
+
+  // Initialize user from Supabase Auth
+  async initUser(): Promise<string | null> {
     try {
-      // Generate a user ID if not exists
-      if (!this.userId) {
-        this.userId = uuidv4();
-        const storage = getLocalStorage();
-        if (storage) {
-          storage.setItem('debugshala_user_id', this.userId);
+      // Try to get authenticated user
+      const user = await getCurrentUser();
+      
+      if (user) {
+        this.userId = user.id;
+        return this.userId;
+      }
+      
+      // If no authenticated user, check localStorage for compatibility
+      const storage = getLocalStorage();
+      if (storage) {
+        const localId = storage.getItem('debugshala_user_id');
+        if (localId) {
+          // Validate if existing ID is UUID format
+          if (isValidUUID(localId)) {
+            console.log('Using stored UUID from localStorage:', localId);
+            this.userId = localId;
+            return this.userId;
+          } else {
+            console.warn('Found invalid UUID format in localStorage. Generating new UUID.');
+            // Old format detected, generate new UUID
+            storage.removeItem('debugshala_user_id');
+          }
         }
       }
       
-      // Store in Supabase
-      const { error } = await supabase
-        .from('users')
-        .upsert({
-          id: this.userId,
-          name: data.name,
-          email: data.email,
-          phone: data.phone,
-          degree: data.degree,
-          graduation_year: data.graduationYear,
-          college_name: data.collegeName,
-          interested_domains: data.interestedDomains,
-          created_at: new Date().toISOString(),
+      // No user found or invalid format, create anonymous ID
+      return this.ensureUserId();
+    } catch (error) {
+      console.error('Error initializing user:', error);
+      // Generate an anonymous ID if anything fails
+      return this.ensureUserId();
+    }
+  }
+
+  async setFormData(data: FormData) {
+    try {
+      // Ensure we have a user ID (anonymous or authenticated)
+      this.ensureUserId();
+      
+      // Validate form data before proceeding
+      validateFormData(data);
+      
+      // Sanitize input data
+      const sanitizedData = sanitizeObject(data);
+      
+      // Store sanitized data locally
+      this.formData = sanitizedData;
+      
+      try {
+        // Store via API route
+        const response = await fetch('/api/users?debug=true', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...sanitizedData,
+            userId: this.userId  // Include the user ID
+          }),
         });
 
-      if (error) {
-        console.error('Error storing user data in Supabase:', error);
+        if (!response.ok) {
+          const responseData = await response.json();
+          console.warn('API request failed but continuing: ', responseData);
+          // Don't throw - allow assessment to continue even with database error
+        } else {
+          const responseData = await response.json();
+          if (!responseData.success) {
+            console.warn('API reported failure but continuing with local data');
+          }
+        }
+        
+      } catch (apiError) {
+        console.error('API error when saving user data:', apiError);
+        console.warn('Continuing with local form data despite API error');
+        // Don't throw - continue using local form data
       }
     } catch (error) {
       console.error('Error storing user data:', error);
+      
+      // If it's a validation error, rethrow it
+      if (error instanceof ValidationError) {
+        throw error;
+      } else {
+        // For all other errors, log but continue with assessment
+        console.warn('Continuing with assessment despite data storage error');
+      }
     }
+    
+    return this.userId;
   }
 
   getFormData(): FormData | null {
@@ -80,10 +178,16 @@ class AssessmentService {
       throw new Error('Form data not found');
     }
 
-    const prompt = this.buildPersonalizedPrompt(type, category);
-    
+    // Ensure we have a user ID (anonymous or authenticated)
+    this.ensureUserId();
+
     try {
-      const response = await fetch('/api/questions/gemini', {
+      // Always use OpenAI endpoint
+      const endpoint = `/api/questions/openai`;
+      
+      console.log(`Using OpenAI provider for questions generation`);
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -92,59 +196,61 @@ class AssessmentService {
           type,
           category,
           formData: this.formData,
-          prompt,
           userId: this.userId,
+          skipStorage: true, // Add parameter to skip database storage
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate questions');
+        throw new Error(`Failed to generate questions with OpenAI: ${response.statusText}`);
       }
 
       const data = await response.json();
       
-      // Store question set in Supabase
-      if (this.userId) {
-        const { error } = await supabase
-          .from('question_sets')
-          .insert({
-            user_id: this.userId,
+      // Validate the questions array
+      if (!Array.isArray(data.questions) || data.questions.length === 0) {
+        throw new Error('Invalid question data received');
+      }
+      
+      // Store question set via API route - but don't fail if it doesn't work
+      try {
+        const saveResponse = await fetch('/api/questions?fallback=true', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
             type,
-            category: category || null,
+            category,
             questions: data.questions,
-            created_at: new Date().toISOString(),
-          });
-
-        if (error) {
-          console.error('Error storing questions in Supabase:', error);
+            provider: this.provider,
+            userId: this.userId,
+          }),
+        });
+        
+        if (!saveResponse.ok) {
+          console.warn('Could not save questions to database via API - continuing with local data');
         }
+      } catch (apiError) {
+        console.warn('Error saving questions via API route - continuing with local data:', apiError);
+        // Don't fail the main operation if this fails - it's non-critical
       }
       
       return data.questions;
     } catch (error) {
-      console.error('Error generating questions:', error);
+      console.error(`Error generating questions with OpenAI:`, error);
+      
+      // Check for different error types
+      if (error instanceof AuthError) {
+        throw error;
+      } else if (error instanceof TypeError) {
+        throw new Error('Network error when contacting OpenAI. Please check your connection.');
+      } else if (error instanceof SyntaxError) {
+        throw new Error('Invalid response from OpenAI service. Please try again.');
+      }
+      
       throw error;
     }
-  }
-
-  private buildPersonalizedPrompt(type: QuestionType, category?: EmployabilityCategory): string {
-    const { name, degree, interestedDomains } = this.formData!;
-    
-    let prompt = `Generate ${type} questions for a candidate named ${name}`;
-    
-    if (degree) {
-      prompt += ` with a degree in ${degree}`;
-    }
-    
-    if (interestedDomains.length > 0) {
-      prompt += ` interested in: ${interestedDomains.join(', ')}.`;
-    }
-    
-    if (type === 'employability' && category) {
-      prompt += ` Focus on ${category} skills assessment.`;
-    }
-    
-    return prompt;
   }
 
   async generateAssessmentReport(scores: AssessmentResult['scores']): Promise<AssessmentResult> {
@@ -152,8 +258,17 @@ class AssessmentService {
       throw new Error('Form data not found');
     }
 
+    // Ensure we have a user ID (anonymous or authenticated)
+    this.ensureUserId();
+
     try {
-      const response = await fetch('/api/assessment/report', {
+      // Validate the scores data
+      validateScores(scores);
+      
+      // Generate the report using OpenAI endpoint
+      const endpoint = `/api/assessment/report-openai`;
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -161,35 +276,48 @@ class AssessmentService {
         body: JSON.stringify({
           formData: this.formData,
           scores,
-          userId: this.userId,
+          userId: this.userId, // Include the user ID for API processing
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to generate report');
+        throw new Error(`Failed to generate assessment report: ${response.statusText}`);
       }
 
-      const report = await response.json();
-      this.assessmentResults = report;
+      const data = await response.json();
       
-      // Store report in Supabase
-      if (this.userId) {
-        const { error } = await supabase
-          .from('assessment_results')
-          .insert({
-            user_id: this.userId,
-            results: report,
-            created_at: new Date().toISOString(),
-          });
+      if (!data.report) {
+        throw new Error('Invalid assessment report data received');
+      }
 
-        if (error) {
-          console.error('Error storing assessment results in Supabase:', error);
+      // Store assessment results via API
+      try {
+        const saveResponse = await fetch('/api/assessment/results', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            formData: this.formData,
+            scores,
+            provider: this.provider,
+            userId: this.userId, // Include the user ID
+          }),
+        });
+        
+        if (!saveResponse.ok) {
+          console.warn('Failed to save assessment results via API:', saveResponse.statusText);
         }
+      } catch (apiError) {
+        console.warn('Error saving assessment results via API:', apiError);
+        // Continue even if saving fails
       }
       
-      return report;
+      // Store the results locally
+      this.assessmentResults = data.report;
+      return data.report;
     } catch (error) {
-      console.error('Error generating report:', error);
+      console.error('Error generating assessment report:', error);
       throw error;
     }
   }
@@ -198,10 +326,46 @@ class AssessmentService {
     return this.assessmentResults;
   }
 
+  isTestCompleted(): boolean {
+    // Check if we have results in memory
+    if (this.assessmentResults) {
+      return true;
+    }
+    
+    // Check localStorage for completion flag
+    if (typeof window !== 'undefined') {
+      try {
+        const storage = localStorage;
+        if (storage.getItem('debugshala_test_completed') === 'true') {
+          return true;
+        }
+        
+        // Check for offline results
+        const offlineData = JSON.parse(storage.getItem('debugshala_offline_data') || '{}');
+        if (offlineData['latest_assessment_results']) {
+          return true;
+        }
+      } catch (error) {
+        console.error('Error checking test completion status:', error);
+      }
+    }
+    
+    return false;
+  }
+
   clearAssessmentData() {
     this.formData = null;
     this.assessmentResults = null;
+    
+    // Also clear completion flag
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('debugshala_test_completed');
+      } catch (error) {
+        console.error('Error clearing test completion flag:', error);
+      }
+    }
   }
 }
 
-export const assessmentService = AssessmentService.getInstance(); 
+export const assessmentService = AssessmentService.getInstance();

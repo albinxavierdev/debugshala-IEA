@@ -38,6 +38,7 @@ import {
   ArcElement
 } from 'chart.js';
 import { Radar as RadarChart, Bar as BarChart, Pie as PieChart } from 'react-chartjs-2';
+import { offlineManager } from '@/lib/offline-manager';
 
 // Register ChartJS components
 ChartJS.register(
@@ -198,6 +199,130 @@ const fallbackResult: AssessmentResult = {
   }
 };
 
+const SimplifiedReport = ({ report }: { report: AssessmentResult }) => {
+  if (!report.candidateInfo || !report.testSummary || !report.finalScore) {
+    return null;
+  }
+  
+  return (
+    <div className="space-y-8 mb-10">
+      {/* 1️⃣ Candidate Information */}
+      <Card className="p-6 shadow-lg">
+        <h2 className="text-2xl font-bold mb-4 flex items-center">
+          <GraduationCap className="mr-2" /> 1️⃣ Candidate Information
+        </h2>
+        <div className="space-y-2">
+          <p className="text-lg"><strong>Name:</strong> {report.candidateInfo.name}</p>
+          <p className="text-lg"><strong>Profile:</strong> {report.candidateInfo.profile}</p>
+          <div>
+            <p className="text-lg font-medium">Interests:</p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {report.candidateInfo.interests.map((interest, index) => (
+                <span key={index} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm">
+                  {interest}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* 2️⃣ Test Summary */}
+      <Card className="p-6 shadow-lg">
+        <h2 className="text-2xl font-bold mb-4 flex items-center">
+          <BarChart4 className="mr-2" /> 2️⃣ Test Summary
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <h3 className="text-lg font-medium mb-2">Scores Overview</h3>
+            <div className="space-y-3">
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="font-medium">Overall Score</span>
+                  <span className="font-bold">{report.testSummary.totalScore}%</span>
+                </div>
+                <Progress value={report.testSummary.totalScore} className="h-2" />
+              </div>
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span>Aptitude</span>
+                  <span>{report.testSummary.aptitudeScore}%</span>
+                </div>
+                <Progress value={report.testSummary.aptitudeScore} className="h-2" />
+              </div>
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span>Programming</span>
+                  <span>{report.testSummary.programmingScore}%</span>
+                </div>
+                <Progress value={report.testSummary.programmingScore} className="h-2" />
+              </div>
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span>Employability</span>
+                  <span>{report.testSummary.employabilityScore}%</span>
+                </div>
+                <Progress value={report.testSummary.employabilityScore} className="h-2" />
+              </div>
+            </div>
+          </div>
+          <div>
+            <div className="mb-4">
+              <h3 className="text-lg font-medium mb-2">Strengths</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                {report.testSummary.strengthAreas.map((strength, index) => (
+                  <li key={index} className="text-primary-700">{strength}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-lg font-medium mb-2">Areas for Improvement</h3>
+              <ul className="list-disc pl-5 space-y-1">
+                {report.testSummary.improvementAreas.map((area, index) => (
+                  <li key={index} className="text-orange-700">{area}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* 6️⃣ Final Score & Next Steps */}
+      <Card className="p-6 shadow-lg">
+        <h2 className="text-2xl font-bold mb-4 flex items-center">
+          <Trophy className="mr-2" /> 6️⃣ Final Score & Next Steps
+        </h2>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-medium">Outcome</h3>
+              <p className="text-xl font-bold mt-1">{report.finalScore.outcome}</p>
+            </div>
+            <div className="bg-primary/10 px-4 py-2 rounded-lg">
+              <h3 className="text-lg font-medium">Skill Readiness Level</h3>
+              <p className="text-xl font-bold text-primary mt-1">{report.finalScore.skillReadinessLevel}</p>
+            </div>
+          </div>
+          
+          <div>
+            <h3 className="text-lg font-medium mb-3">Recommended Next Steps</h3>
+            <div className="space-y-2">
+              {report.finalScore.nextSteps.map((step, index) => (
+                <div key={index} className="flex items-start gap-2">
+                  <div className="rounded-full bg-primary/10 p-1 mt-0.5">
+                    <Target className="h-4 w-4 text-primary" />
+                  </div>
+                  <p>{step}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
 export default function ResultsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -212,6 +337,12 @@ export default function ResultsPage() {
         if (serviceReport) {
           setReport(serviceReport);
           setLoading(false);
+          
+          // Mark test as completed to prevent resubmission
+          const storage = getLocalStorage();
+          if (storage) {
+            storage.setItem('debugshala_test_completed', 'true');
+          }
           return;
         }
         
@@ -233,10 +364,38 @@ export default function ResultsPage() {
               
               setReport(minimalReport);
               setLoading(false);
+              
+              // Mark test as completed to prevent resubmission
+              storage.setItem('debugshala_test_completed', 'true');
               return;
             } catch (parseError) {
               console.error('Error parsing scores from localStorage:', parseError);
             }
+          }
+          
+          // Check for offline results
+          const offlineData = offlineManager.getOfflineData('latest_assessment_results');
+          if (offlineData && offlineData.data) {
+            console.log('Loading assessment report from offline storage');
+            
+            if (offlineData.data.responseData) {
+              // If we have full response data
+              setReport(offlineData.data.responseData);
+            } else {
+              // Create report from scores
+              const minimalReport: AssessmentResult = {
+                ...fallbackResult,
+                scores: offlineData.data.scores,
+                timestamp: offlineData.data.timestamp || new Date().toISOString()
+              };
+              setReport(minimalReport);
+            }
+            
+            setLoading(false);
+            
+            // Mark test as completed to prevent resubmission
+            storage.setItem('debugshala_test_completed', 'true');
+            return;
           }
         }
         
@@ -249,7 +408,7 @@ export default function ResultsPage() {
         // Use fallback data
         setReport(fallbackResult);
       } finally {
-    setLoading(false);
+        setLoading(false);
       }
     };
 
@@ -449,6 +608,10 @@ export default function ResultsPage() {
           </p>
         </motion.div>
 
+        {report && report.candidateInfo && report.testSummary && report.finalScore ? (
+          <SimplifiedReport report={report} />
+        ) : (
+          <>
         {/* Candidate Information */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -1325,256 +1488,6 @@ export default function ResultsPage() {
               </div>
             </div>
           </Card>
-          
-          <Card className="p-6">
-            <h3 className="text-xl font-semibold mb-6">Performance Comparison with Top Performers</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-muted/30 p-4 rounded-lg text-center">
-                <div className="text-4xl font-bold text-primary mb-2">{report.scores.percentile || 68}%</div>
-                <p className="text-sm text-muted-foreground">Your Percentile Rank</p>
-                <p className="text-xs mt-2">You performed better than {report.scores.percentile || 68}% of candidates</p>
-              </div>
-              
-              <div className="bg-muted/30 p-4 rounded-lg text-center">
-                <div className="text-4xl font-bold text-blue-500 mb-2">{overallScore}%</div>
-                <p className="text-sm text-muted-foreground">Your Overall Score</p>
-                <p className="text-xs mt-2">Industry average is 75%</p>
-              </div>
-              
-              <div className="bg-muted/30 p-4 rounded-lg text-center">
-                <div className="text-4xl font-bold text-green-500 mb-2">85%</div>
-                <p className="text-sm text-muted-foreground">Top Performers Average</p>
-                <p className="text-xs mt-2">Gap of {85 - overallScore}% to reach top tier</p>
-              </div>
-            </div>
-            
-            <div className="mt-6 pt-6 border-t">
-              <h4 className="font-medium mb-3">Key Differentiators of Top Performers</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-3 border rounded-lg">
-                  <h5 className="font-medium mb-2">Technical Excellence</h5>
-                  <p className="text-sm text-muted-foreground">
-                    Top performers demonstrate strong algorithmic thinking, optimal code solutions, and advanced problem-solving capabilities.
-                  </p>
-                </div>
-                
-                <div className="p-3 border rounded-lg">
-                  <h5 className="font-medium mb-2">Communication Skills</h5>
-                  <p className="text-sm text-muted-foreground">
-                    They excel in articulating technical concepts clearly and collaborating effectively in team environments.
-                  </p>
-                </div>
-                
-                <div className="p-3 border rounded-lg">
-                  <h5 className="font-medium mb-2">Learning Agility</h5>
-                  <p className="text-sm text-muted-foreground">
-                    High adaptability to new technologies and continuous self-improvement distinguish top candidates.
-                  </p>
-                </div>
-                
-                <div className="p-3 border rounded-lg">
-                  <h5 className="font-medium mb-2">Project Experience</h5>
-                  <p className="text-sm text-muted-foreground">
-                    Practical application of skills through real projects or substantial coursework separates top performers.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-        
-        {/* Improvement Plan */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="mb-8"
-        >
-          <h2 className="text-2xl font-bold mb-4">5️⃣ Detailed Improvement Plan & Study Guide</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Aptitude Improvement */}
-            <Card className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Brain className="h-6 w-6 text-primary" />
-                <h3 className="text-xl font-semibold">For Aptitude & Reasoning</h3>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-2">Recommended Books</h4>
-                  <ul className="space-y-2">
-                    {(report.recommendations.aptitudeResources?.books || [
-                      "Quantitative Aptitude by R.S. Aggarwal",
-                      "Logical Reasoning by M.K. Pandey"
-                    ]).map((book, index) => (
-                      <li key={index} className="flex gap-2 items-center">
-                        <div className="h-1.5 w-1.5 rounded-full bg-primary"></div>
-                        <span className="text-sm">{book}</span>
-                      </li>
-                ))}
-              </ul>
-            </div>
-                
-                <div>
-                  <h4 className="font-medium mb-2">Practice Platforms</h4>
-                  <ul className="space-y-2">
-                    {(report.recommendations.aptitudeResources?.platforms || [
-                      "HackerRank",
-                      "IndiaBIX",
-                      "Brilliant.org"
-                    ]).map((platform, index) => (
-                      <li key={index} className="flex gap-2 items-center">
-                        <div className="h-1.5 w-1.5 rounded-full bg-primary"></div>
-                        <span className="text-sm">{platform}</span>
-                      </li>
-                    ))}
-                  </ul>
-          </div>
-                
-                <div className="p-3 bg-muted/50 rounded-lg">
-                  <h4 className="font-medium mb-2">Daily Practice Plan</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {report.recommendations.aptitudeResources?.practiceGuide || 
-                      "5 reasoning questions + 10-minute numerical drills daily"
-                    }
-                  </p>
-        </div>
-
-                <div className="p-3 border border-primary/20 bg-primary/5 rounded-lg">
-                  <h4 className="font-medium mb-2">Focus Areas</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {['Data interpretation', 'Probability', 'Series completion', 'Logical puzzles'].map((area, index) => (
-                      <div key={index} className="px-2 py-1 bg-white text-xs rounded-full">
-                        {area}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </Card>
-            
-            {/* Programming Improvement */}
-            <Card className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Lightbulb className="h-6 w-6 text-primary" />
-                <h3 className="text-xl font-semibold">For Programming & Coding</h3>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-2">Courses to Take</h4>
-                  <ul className="space-y-2">
-                    {(report.recommendations.programmingResources?.courses || [
-                      "DebugShala's Web Development Bootcamp",
-                      "Data Structures Masterclass"
-                    ]).map((course, index) => (
-                      <li key={index} className="flex gap-2 items-center">
-                        <div className="h-1.5 w-1.5 rounded-full bg-primary"></div>
-                        <span className="text-sm">{course}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium mb-2">Coding Challenges</h4>
-                  <ul className="space-y-2">
-                    {(report.recommendations.programmingResources?.platforms || [
-                      "LeetCode",
-                      "CodeChef (Beginner Level)",
-                      "HackerRank"
-                    ]).map((platform, index) => (
-                      <li key={index} className="flex gap-2 items-center">
-                        <div className="h-1.5 w-1.5 rounded-full bg-primary"></div>
-                        <span className="text-sm">{platform}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div className="p-3 bg-muted/50 rounded-lg">
-                  <h4 className="font-medium mb-2">Study Topics</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {(report.recommendations.programmingResources?.topicsToStudy || [
-                      "Data structures",
-                      "Recursion",
-                      "OOP concepts",
-                      "Design patterns"
-                    ]).map((topic, index) => (
-                      <div key={index} className="px-2 py-1 bg-white text-xs rounded-full">
-                        {topic}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="p-3 border border-primary/20 bg-primary/5 rounded-lg">
-                  <h4 className="font-medium mb-2">Recommended Project</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Build a small web application that demonstrates CRUD operations, API integration, and responsive design to showcase your practical skills.
-                  </p>
-                </div>
-              </div>
-            </Card>
-            
-            {/* Employability Improvement */}
-            <Card className="p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <GraduationCap className="h-6 w-6 text-primary" />
-                <h3 className="text-xl font-semibold">For Employability & Soft Skills</h3>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="p-3 bg-muted/50 rounded-lg">
-                  <h4 className="font-medium mb-2">Resume & Profile</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Improve Resume & LinkedIn Profile with DebugShala Career Coach to highlight your technical strengths and projects.
-                  </p>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium mb-2">Recommended Courses</h4>
-                  <ul className="space-y-2">
-                    {(report.recommendations.employabilityResources?.courses || [
-                      "Business Communication & Email Writing",
-                      "Technical Interview Preparation",
-                      "Time Management for Professionals"
-                    ]).map((course, index) => (
-                      <li key={index} className="flex gap-2 items-center">
-                        <div className="h-1.5 w-1.5 rounded-full bg-primary"></div>
-                        <span className="text-sm">{course}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div>
-                  <h4 className="font-medium mb-2">Activities</h4>
-                  <ul className="space-y-2">
-                    {(report.recommendations.employabilityResources?.activities || [
-                      "Mock Interviews for confidence-building",
-                      "Resume Building Workshop",
-                      "LinkedIn Profile Optimization"
-                    ]).map((activity, index) => (
-                      <li key={index} className="flex gap-2 items-center">
-                        <div className="h-1.5 w-1.5 rounded-full bg-primary"></div>
-                        <span className="text-sm">{activity}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div className="p-3 border border-primary/20 bg-primary/5 rounded-lg">
-                  <h4 className="font-medium mb-2">Industry Engagement</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Join relevant tech communities and attend industry webinars to expand your network and stay current with industry trends.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </div>
         </motion.div>
         
         {/* Final Score & Next Steps */}
@@ -1736,6 +1649,8 @@ export default function ResultsPage() {
             </div>
           </div>
         </motion.div>
+          </>
+        )}
         
         <div className="mt-8 text-center">
           <Button 

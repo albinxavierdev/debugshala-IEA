@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
-import { generateAptitudeQuestions, generateProgrammingQuestions, generateCodingTasks, generateEmployabilityQuestions } from '@/lib/gemini';
+import { generateQuestionsBatch } from '@/lib/openai';
 
 type Question = {
   id: string;
@@ -39,19 +39,15 @@ export default function TestPage() {
   useEffect(() => {
     const loadQuestions = async () => {
       try {
-        const [aptitudeQuestions, programmingQuestions, codingTasks, employabilityQuestions] = await Promise.all([
-          generateAptitudeQuestions(),
-          generateProgrammingQuestions(),
-          generateCodingTasks(),
-          generateEmployabilityQuestions('general')
+        // Generate all question types with OpenAI
+        const allQuestions = await generateQuestionsBatch([
+          { type: 'aptitude', count: 5 },
+          { type: 'programming', count: 5 },
+          { type: 'coding', count: 3 },
+          { type: 'employability', count: 5 }
         ]);
 
-        setQuestions([
-          ...aptitudeQuestions,
-          ...programmingQuestions,
-          ...codingTasks,
-          ...employabilityQuestions
-        ]);
+        setQuestions(allQuestions);
         setLoading(false);
       } catch (error) {
         console.error('Error loading questions:', error);
