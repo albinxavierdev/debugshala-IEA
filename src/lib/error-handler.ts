@@ -13,6 +13,7 @@ interface ErrorOptions {
   retryAction?: () => void;
   errorId?: string;
   additionalInfo?: Record<string, any>;
+  duration?: number;
 }
 
 /**
@@ -30,13 +31,7 @@ class ErrorHandler {
       title,
       description: message,
       variant: this.getVariantForLevel(options?.level || ErrorLevel.ERROR),
-      duration: this.getDurationForLevel(options?.level || ErrorLevel.ERROR),
-      action: options?.retryAction ? {
-        label: "Retry",
-        onClick: () => {
-          if (options.retryAction) options.retryAction();
-        }
-      } : undefined
+      duration: options?.duration || this.getDurationForLevel(options?.level || ErrorLevel.ERROR)
     });
     
     // Log error for tracking
@@ -207,3 +202,53 @@ class ErrorHandler {
 
 // Export a singleton instance
 export const errorHandler = new ErrorHandler();
+
+/**
+ * Simple error utilities for API and data handling
+ */
+
+/**
+ * Simple error handler that logs the error and returns a formatted message
+ */
+export const formatError = (error: unknown): string => {
+  console.error('Error occurred:', error);
+  
+  if (error instanceof Error) {
+    return error.message;
+  }
+  
+  return 'An unknown error occurred';
+};
+
+/**
+ * Checks if the error is a network error
+ */
+export const isNetworkError = (error: unknown): boolean => {
+  if (typeof error === 'object' && error !== null) {
+    // Check for common network error patterns
+    if ('message' in error) {
+      const message = (error as Error).message.toLowerCase();
+      return (
+        message.includes('network') ||
+        message.includes('offline') ||
+        message.includes('failed to fetch') ||
+        message.includes('connection') ||
+        message.includes('timeout')
+      );
+    }
+  }
+  return false;
+};
+
+/**
+ * Create a standardized error response
+ */
+export const createErrorResponse = (message: string, status: number = 500) => {
+  return {
+    error: {
+      message,
+      status,
+      timestamp: new Date().toISOString()
+    }
+  };
+};
