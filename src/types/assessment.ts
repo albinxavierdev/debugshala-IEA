@@ -18,33 +18,12 @@ export interface AssessmentResult {
   scores: {
     aptitude: number;
     programming: number;
-    employability: Record<string, number>;
-    total?: number;
-    percentile?: number;
-    readinessScore?: number;
+    employability: EmployabilityScores;
+    total: number;
+    percentile: number;
+    readinessScore: number;
   };
-  candidateInfo?: {
-    name: string;
-    profile: string;
-    interests: string[];
-    [key: string]: any;
-  } | null;
-  testSummary?: {
-    totalScore: number;
-    aptitudeScore: number;
-    programmingScore: number;
-    employabilityScore: number;
-    strengthAreas: string[];
-    improvementAreas: string[];
-    [key: string]: any;
-  } | null;
-  finalScore?: {
-    outcome: 'Pass' | 'Not Qualified';
-    skillReadinessLevel: 'Beginner' | 'Intermediate' | 'Advanced';
-    nextSteps: string[];
-    [key: string]: any;
-  } | null;
-  sectionDetails?: {
+  sectionDetails: {
     aptitude: {
       totalQuestions: number;
       correctAnswers: number;
@@ -69,10 +48,10 @@ export interface AssessmentResult {
       strengths: string[];
       weakAreas: string[];
     };
-  } | null;
+  };
   outcome: 'Pass' | 'Not Qualified';
   skillReadinessLevel: 'Beginner' | 'Intermediate' | 'Advanced';
-  recommendations?: {
+  recommendations: {
     skills: string[];
     courses: string[];
     careerPaths: string[];
@@ -91,8 +70,8 @@ export interface AssessmentResult {
       activities: string[];
     };
     nextAction: string;
-  } | null;
-  detailedAnalysis?: {
+  };
+  detailedAnalysis: {
     strengths: string[];
     areasForImprovement: string[];
     skillGaps: string[];
@@ -102,7 +81,28 @@ export interface AssessmentResult {
       softSkills: number;
       overallGap: number;
     };
-  } | null;
+  };
+  candidateInfo?: {
+    name: string;
+    profile: string;
+    interests: string[];
+    [key: string]: any;
+  };
+  testSummary?: {
+    totalScore: number;
+    aptitudeScore: number;
+    programmingScore: number;
+    employabilityScore: number;
+    strengthAreas: string[];
+    improvementAreas: string[];
+    [key: string]: any;
+  };
+  finalScore?: {
+    outcome: 'Pass' | 'Not Qualified';
+    skillReadinessLevel: 'Beginner' | 'Intermediate' | 'Advanced';
+    nextSteps: string[];
+    [key: string]: any;
+  };
 }
 
 export interface Question {

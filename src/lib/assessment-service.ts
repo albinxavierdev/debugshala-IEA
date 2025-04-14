@@ -1,7 +1,7 @@
 import { FormData, AssessmentResult, Question, QuestionType, EmployabilityCategory } from '@/types/assessment';
 import { validateFormData, validateScores, sanitizeObject, ValidationError } from '@/lib/validation';
-import { getCurrentUser } from '@/lib/supabase-auth';
-import { generateUUID, isValidUUID } from '@/lib/uuid';
+import { getCurrentUser } from './supabase-auth';
+import { generateUUID, isValidUUID } from './uuid';
 
 // Helper to safely access localStorage (only in browser)
 const getLocalStorage = () => {

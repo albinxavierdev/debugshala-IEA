@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { AssessmentResult } from '@/types/assessment';
 import { assessmentService } from '@/lib/assessment-service';
@@ -8,6 +8,8 @@ import { Navbar } from '@/components/ui/navbar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { toast } from '@/components/ui/use-toast';
 import { 
   CheckCircle, 
   AlertCircle, 
@@ -39,6 +41,7 @@ import {
 } from 'chart.js';
 import { Radar as RadarChart, Bar as BarChart, Pie as PieChart } from 'react-chartjs-2';
 import { offlineManager } from '@/lib/offline-manager';
+import { ReactNode } from 'react';
 
 // Register ChartJS components
 ChartJS.register(
@@ -323,262 +326,308 @@ const SimplifiedReport = ({ report }: { report: AssessmentResult }) => {
   );
 };
 
+// Loading component
+const LoadingState = () => (
+  <div className="flex flex-col items-center justify-center min-h-screen p-4">
+    <Progress value={100} className="w-[60%] animate-pulse" />
+    <p className="mt-4 text-muted-foreground">Loading your assessment results...</p>
+  </div>
+);
+
+interface ChartErrorFallbackProps {
+  error: Error;
+  resetErrorBoundary: () => void;
+}
+
+interface ChartWrapperProps {
+  children: ReactNode;
+  title: string;
+}
+
+// Error component for charts
+const ChartErrorFallback = ({ error, resetErrorBoundary }: ChartErrorFallbackProps) => (
+  <div className="flex flex-col items-center justify-center p-4 border rounded-lg">
+    <AlertCircle className="w-8 h-8 text-destructive" />
+    <p className="mt-2 text-sm text-destructive">Failed to load chart: {error.message}</p>
+    <Button variant="outline" onClick={resetErrorBoundary} className="mt-2">
+      Retry
+    </Button>
+  </div>
+);
+
+const ChartWrapper = ({ children, title }: ChartWrapperProps) => (
+  <Card className="p-4">
+    <h3 className="text-lg font-semibold mb-4">{title}</h3>
+    <ErrorBoundary fallback={
+      <div className="flex flex-col items-center justify-center p-4 border rounded-lg">
+        <AlertCircle className="w-8 h-8 text-destructive" />
+        <p className="mt-2 text-sm text-destructive">Failed to load chart</p>
+        <Button 
+          variant="outline" 
+          onClick={() => window.location.reload()}
+          className="mt-2"
+        >
+          Retry
+        </Button>
+      </div>
+    }>
+      {children}
+    </ErrorBoundary>
+  </Card>
+);
+
+// Data validation function
+const validateReportData = (data: any): data is AssessmentResult => {
+  if (!data || typeof data !== 'object') return false;
+  
+  const requiredFields = [
+    'userId',
+    'scores',
+    'sectionDetails',
+    'recommendations',
+    'detailedAnalysis'
+  ] as const;
+
+  const hasAllFields = requiredFields.every(field => 
+    field in data && data[field] !== null && data[field] !== undefined
+  );
+
+  if (!hasAllFields) return false;
+
+  // Verify scores structure
+  const { scores } = data;
+  if (!scores.employability || 
+      typeof scores.employability !== 'object' ||
+      !('core' in scores.employability) ||
+      !('soft' in scores.employability) ||
+      !('professional' in scores.employability)) {
+    return false;
+  }
+
+  return true;
+};
+
+interface SkillLevel {
+  text: string;
+  color: string;
+  textColor: string;
+}
+
+const calculateLevel = (score: number): SkillLevel => {
+  if (score >= 85) return { text: 'Expert', color: 'bg-green-600', textColor: 'text-green-600' };
+  if (score >= 70) return { text: 'Proficient', color: 'bg-blue-600', textColor: 'text-blue-600' };
+  if (score >= 50) return { text: 'Intermediate', color: 'bg-amber-500', textColor: 'text-amber-500' };
+  return { text: 'Beginner', color: 'bg-red-500', textColor: 'text-red-500' };
+};
+
 export default function ResultsPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
   const [report, setReport] = useState<AssessmentResult | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadReport = async () => {
-      try {
-        // Try to get report from assessment service first
-        const serviceReport = assessmentService.getAssessmentResults();
-        
-        if (serviceReport) {
-          setReport(serviceReport);
-          setLoading(false);
-          
-          // Mark test as completed to prevent resubmission
-          const storage = getLocalStorage();
-          if (storage) {
-            storage.setItem('debugshala_test_completed', 'true');
-          }
+  const loadReport = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Try to get from localStorage first
+      const localStorage = getLocalStorage();
+      const cachedReport = localStorage?.getItem('assessmentResult');
+      
+      if (cachedReport) {
+        const parsedReport = JSON.parse(cachedReport);
+        if (validateReportData(parsedReport)) {
+          setReport(parsedReport);
           return;
         }
-        
-        // Try to get scores from localStorage as fallback
-        const storage = getLocalStorage();
-        if (storage) {
-          const scoresJson = storage.getItem('debugshala_assessment_scores');
-          
-          if (scoresJson) {
-            try {
-              const scores = JSON.parse(scoresJson);
-              
-              // Create a minimal report with the scores
-              const minimalReport: AssessmentResult = {
-                ...fallbackResult,
-                scores,
-                timestamp: new Date().toISOString()
-              };
-              
-              setReport(minimalReport);
-              setLoading(false);
-              
-              // Mark test as completed to prevent resubmission
-              storage.setItem('debugshala_test_completed', 'true');
-              return;
-            } catch (parseError) {
-              console.error('Error parsing scores from localStorage:', parseError);
-            }
-          }
-          
-          // Check for offline results
-          const offlineData = offlineManager.getOfflineData('latest_assessment_results');
-          if (offlineData && offlineData.data) {
-            console.log('Loading assessment report from offline storage');
-            
-            if (offlineData.data.responseData) {
-              // If we have full response data
-              setReport(offlineData.data.responseData);
-            } else {
-              // Create report from scores
-              const minimalReport: AssessmentResult = {
-                ...fallbackResult,
-                scores: offlineData.data.scores,
-                timestamp: offlineData.data.timestamp || new Date().toISOString()
-              };
-              setReport(minimalReport);
-            }
-            
-            setLoading(false);
-            
-            // Mark test as completed to prevent resubmission
-            storage.setItem('debugshala_test_completed', 'true');
-            return;
-          }
-        }
-        
-        // If no data is available, use complete fallback
-        setReport(fallbackResult);
-        
-      } catch (error) {
-        console.error('Error loading report:', error);
-        
-        // Use fallback data
-        setReport(fallbackResult);
-      } finally {
-        setLoading(false);
       }
-    };
 
+      // If no valid cached data, try to get from service
+      const result = await assessmentService.getAssessmentResults();
+      if (result && validateReportData(result)) {
+        setReport(result);
+        localStorage?.setItem('assessmentResult', JSON.stringify(result));
+      } else {
+        throw new Error('Invalid report data structure');
+      }
+    } catch (err) {
+      console.error('Error loading report:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load report');
+      toast({
+        variant: "destructive",
+        title: "Error loading report",
+        description: "Please try again or contact support if the problem persists."
+      });
+      // Use fallback data in development only
+      if (process.env.NODE_ENV === 'development' && validateReportData(fallbackResult)) {
+        setReport(fallbackResult);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     loadReport();
   }, []);
 
-  const calculateLevel = (score: number) => {
-    if (score >= 85) return { text: 'Expert', color: 'bg-green-600', textColor: 'text-green-600' };
-    if (score >= 70) return { text: 'Proficient', color: 'bg-blue-600', textColor: 'text-blue-600' };
-    if (score >= 50) return { text: 'Intermediate', color: 'bg-amber-500', textColor: 'text-amber-500' };
-    return { text: 'Beginner', color: 'bg-red-500', textColor: 'text-red-500' };
-  };
+  if (isLoading) {
+    return <LoadingState />;
+  }
 
-  const getOverallScore = () => {
-    if (!report?.scores) return 0;
-    
-    if (report.scores.total) {
-      return report.scores.total;
-    }
-    
-    const { aptitude, programming, employability } = report.scores;
-    
-    // Calculate avg employability score
-    let employabilityAvg = 0;
-    if (typeof employability === 'object') {
-      const values = Object.values(employability);
-      employabilityAvg = values.length > 0 
-        ? values.reduce((sum, val) => sum + val, 0) / values.length 
-        : 0;
-    } else if (typeof employability === 'number') {
-      employabilityAvg = employability;
-    }
-    
-    // Weighted average: 30% aptitude, 30% programming, 40% employability
-    return Math.round((aptitude * 0.3) + (programming * 0.3) + (employabilityAvg * 0.4));
-  };
-
-  // Prepare chart data
-  const prepareRadarData = () => {
-    if (!report) return null;
-    
-    const employabilityScores = report.scores.employability;
-    if (typeof employabilityScores !== 'object') return null;
-    
-    const labels = Object.keys(employabilityScores).map(key => 
-      key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1')
-    );
-    
-    const data = {
-      labels,
-      datasets: [
-        {
-          label: 'Employability Skills',
-          data: Object.values(employabilityScores),
-          backgroundColor: 'rgba(99, 102, 241, 0.2)',
-          borderColor: 'rgba(99, 102, 241, 1)',
-          borderWidth: 2,
-          pointBackgroundColor: 'rgba(99, 102, 241, 1)',
-          pointBorderColor: '#fff',
-          pointHoverBackgroundColor: '#fff',
-          pointHoverBorderColor: 'rgba(99, 102, 241, 1)'
-        }
-      ]
-    };
-    
-    return data;
-  };
-  
-  const prepareBarData = () => {
-    if (!report) return null;
-    
-    const data = {
-      labels: ['Aptitude', 'Programming', 'Employability'],
-      datasets: [
-        {
-          label: 'Assessment Scores',
-          data: [
-            report.scores.aptitude, 
-            report.scores.programming, 
-            typeof report.scores.employability === 'object' 
-              ? Object.values(report.scores.employability).reduce((sum, val) => sum + val, 0) / 
-                Object.values(report.scores.employability).length
-              : report.scores.employability
-          ],
-          backgroundColor: [
-            'rgba(255, 99, 132, 0.7)',
-            'rgba(54, 162, 235, 0.7)',
-            'rgba(75, 192, 192, 0.7)'
-          ],
-          borderColor: [
-            'rgba(255, 99, 132, 1)',
-            'rgba(54, 162, 235, 1)',
-            'rgba(75, 192, 192, 1)'
-          ],
-          borderWidth: 1
-        }
-      ]
-    };
-    
-    return data;
-  };
-  
-  const preparePieData = () => {
-    if (!report || !report.detailedAnalysis) return null;
-    
-    // Count strengths and areas for improvement
-    const strengthsCount = report.detailedAnalysis.strengths?.length || 0;
-    const improvementCount = report.detailedAnalysis.areasForImprovement?.length || 0;
-    const gapsCount = report.detailedAnalysis.skillGaps?.length || 0;
-    
-    const data = {
-      labels: ['Strengths', 'Areas for Improvement', 'Skill Gaps'],
-      datasets: [
-        {
-          data: [strengthsCount, improvementCount, gapsCount],
-          backgroundColor: [
-            'rgba(75, 192, 192, 0.7)',
-            'rgba(255, 206, 86, 0.7)',
-            'rgba(255, 99, 132, 0.7)'
-          ],
-          borderColor: [
-            'rgba(75, 192, 192, 1)',
-            'rgba(255, 206, 86, 1)',
-            'rgba(255, 99, 132, 1)'
-          ],
-          borderWidth: 1
-        }
-      ]
-    };
-    
-    return data;
-  };
-
-  if (loading) {
+  if (error) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-        <div className="text-center">
-            <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-lg text-muted-foreground">Generating your assessment report...</p>
-          </div>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <AlertCircle className="w-12 h-12 text-destructive" />
+        <h2 className="mt-4 text-xl font-semibold">Failed to Load Results</h2>
+        <p className="mt-2 text-muted-foreground">{error}</p>
+        <Button onClick={() => loadReport()} className="mt-4">Retry</Button>
       </div>
     );
   }
 
   if (!report) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center max-w-md px-4">
-            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Assessment Results Not Found</h2>
-            <p className="text-muted-foreground mb-6">We couldn't find your assessment results. You may need to complete an assessment first.</p>
-            <Button onClick={() => router.push('/assessment/instructions')}>
-              Take Assessment
-            </Button>
-          </div>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <AlertCircle className="w-12 h-12 text-destructive" />
+        <h2 className="mt-4 text-xl font-semibold">No Results Found</h2>
+        <p className="mt-2 text-muted-foreground">We couldn't find your assessment results.</p>
+        <Button onClick={() => router.push('/assessment')} className="mt-4">
+          Take Assessment
+        </Button>
       </div>
     );
   }
+
+  // Ensure we have all required data
+  const { scores, detailedAnalysis, recommendations } = report;
+  if (!scores || !detailedAnalysis || !recommendations) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <AlertCircle className="w-12 h-12 text-destructive" />
+        <h2 className="mt-4 text-xl font-semibold">Incomplete Results</h2>
+        <p className="mt-2 text-muted-foreground">Some assessment data is missing.</p>
+        <Button onClick={() => loadReport()} className="mt-4">Retry</Button>
+      </div>
+    );
+  }
+
+  const getOverallScore = (): number => {
+    return report.scores.total;
+  };
+
+  const prepareRadarData = () => {
+    const { employability } = report.scores;
+    return {
+      labels: [
+        'Core Skills',
+        'Soft Skills',
+        'Professional',
+        'Communication',
+        'Teamwork',
+        'Leadership'
+      ],
+      datasets: [{
+        label: 'Skills Score',
+        data: [
+          employability.core,
+          employability.soft,
+          employability.professional,
+          employability.communication ?? 0,
+          employability.teamwork ?? 0,
+          employability.leadership ?? 0
+        ],
+        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+        borderColor: 'rgb(99, 102, 241)',
+        borderWidth: 2,
+        pointBackgroundColor: 'rgb(99, 102, 241)',
+      }]
+    };
+  };
+
+  const prepareBarData = () => {
+    const { scores } = report;
+    return {
+      labels: ['Aptitude', 'Programming', 'Employability'],
+      datasets: [{
+        label: 'Score',
+        data: [
+          scores.aptitude,
+          scores.programming,
+          scores.employability.core
+        ],
+        backgroundColor: [
+          'rgba(59, 130, 246, 0.5)',
+          'rgba(99, 102, 241, 0.5)',
+          'rgba(139, 92, 246, 0.5)'
+        ],
+        borderColor: [
+          'rgb(59, 130, 246)',
+          'rgb(99, 102, 241)',
+          'rgb(139, 92, 246)'
+        ],
+        borderWidth: 1
+      }]
+    };
+  };
+
+  const preparePieData = () => {
+    const { detailedAnalysis } = report;
+    const { strengths, areasForImprovement, skillGaps } = detailedAnalysis;
+    const total = strengths.length + areasForImprovement.length + skillGaps.length;
+
+    return {
+      labels: ['Strengths', 'Areas for Improvement', 'Skill Gaps'],
+      datasets: [{
+        data: [
+          (strengths.length / total) * 100,
+          (areasForImprovement.length / total) * 100,
+          (skillGaps.length / total) * 100
+        ],
+        backgroundColor: [
+          'rgba(34, 197, 94, 0.5)',
+          'rgba(234, 179, 8, 0.5)',
+          'rgba(239, 68, 68, 0.5)'
+        ],
+        borderColor: [
+          'rgb(34, 197, 94)',
+          'rgb(234, 179, 8)',
+          'rgb(239, 68, 68)'
+        ],
+        borderWidth: 1
+      }]
+    };
+  };
 
   const overallScore = getOverallScore();
   const overallLevel = calculateLevel(overallScore);
   const radarData = prepareRadarData();
   const barData = prepareBarData();
   const pieData = preparePieData();
+
+  const prepareChartData = (type: 'radar' | 'bar' | 'pie') => {
+    try {
+      switch (type) {
+        case 'radar':
+          return prepareRadarData();
+        case 'bar':
+          return prepareBarData();
+        case 'pie':
+          return preparePieData();
+        default:
+          throw new Error('Invalid chart type');
+      }
+    } catch (error) {
+      console.error(`Error preparing ${type} chart data:`, error);
+      toast({
+        variant: "destructive",
+        title: `Error preparing ${type} chart`,
+        description: "Some data might not be displayed correctly."
+      });
+      return null;
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -886,7 +935,7 @@ export default function ResultsPage() {
                 </div>
                 <div className="mt-4 text-center">
                   <h4 className="font-semibold">Next Step</h4>
-                  <p className="text-muted-foreground mt-1">{report.recommendations?.nextAction || 'Proceed to Technical Test'}</p>
+                  <p className="text-muted-foreground mt-1">{report.recommendations.nextAction || 'Proceed to Technical Test'}</p>
                 </div>
               </div>
             </Card>
@@ -1303,12 +1352,7 @@ export default function ResultsPage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="lg:col-span-2"
           >
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                <RadarIcon className="h-5 w-5 text-primary" />
-                Employability Skills Breakdown
-              </h2>
-              
+            <ChartWrapper title="Skills Radar">
               {radarData && (
                 <div className="h-[350px] w-full">
                   <RadarChart 
@@ -1347,7 +1391,7 @@ export default function ResultsPage() {
                   />
                 </div>
               )}
-            </Card>
+            </ChartWrapper>
           </motion.div>
           
           <motion.div
@@ -1355,37 +1399,42 @@ export default function ResultsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                <PieChartIcon className="h-5 w-5 text-primary" />
-                Analysis Breakdown
-              </h2>
-              
-              {pieData && (
-                <div className="h-[250px] mx-auto">
-                  <PieChart 
-                    data={pieData}
+            <ChartWrapper title="Performance Breakdown">
+              {barData && (
+                <div className="h-[300px] w-full">
+                  <BarChart 
+                    data={barData}
                     options={{
                       responsive: true,
                       maintainAspectRatio: false,
+                      scales: {
+                        y: {
+                          beginAtZero: true,
+                          max: 100,
+                          ticks: {
+                            callback: function(value) {
+                              return value + '%';
+                            }
+                          }
+                        }
+                      },
                       plugins: {
                         legend: {
-                          position: 'bottom'
+                          display: false
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: function(context) {
+                              return context.raw + '%';
+                            }
+                          }
                         }
                       }
                     }}
                   />
                 </div>
               )}
-              
-              <div className="mt-6 pt-4 border-t text-center">
-                <p className="text-sm text-muted-foreground">
-                  Based on {report.detailedAnalysis?.strengths?.length || 0 + 
-                    (report.detailedAnalysis?.areasForImprovement?.length || 0) + 
-                    (report.detailedAnalysis?.skillGaps?.length || 0)} analyzed factors
-                </p>
-              </div>
-            </Card>
+            </ChartWrapper>
           </motion.div>
         </div>
         
@@ -1458,7 +1507,7 @@ export default function ResultsPage() {
                 <div>
                   <h4 className="font-medium mb-3">Key Gap Areas</h4>
                   <ul className="space-y-3">
-                    {(report.detailedAnalysis?.skillGaps || []).slice(0, 4).map((gap, index) => (
+                    {report.detailedAnalysis.skillGaps.slice(0, 4).map((gap, index) => (
                       <li key={index} className="flex gap-3 items-start p-3 bg-muted/50 rounded-lg">
                         <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
                         <span>{gap}</span>
@@ -1470,14 +1519,14 @@ export default function ResultsPage() {
                 <div className="p-4 border rounded-lg bg-primary/5">
                   <h4 className="font-medium mb-2">Industry Insight</h4>
                   <p className="text-sm text-muted-foreground">
-                    Based on current IT industry trends, candidates with strong problem-solving skills, AI literacy, and solid technical fundamentals are most in demand. Your overall gap of {report.detailedAnalysis?.industryComparison?.overallGap || 15}% from industry standards can be addressed through targeted skill development.
+                    Based on current IT industry trends, candidates with strong problem-solving skills, AI literacy, and solid technical fundamentals are most in demand. Your overall gap of {report.detailedAnalysis.industryComparison?.overallGap || 15}% from industry standards can be addressed through targeted skill development.
                   </p>
           </div>
 
                 <div className="p-4 border rounded-lg">
                   <h4 className="font-medium mb-2">Recommended Focus Areas</h4>
                   <div className="grid grid-cols-2 gap-2">
-                    {(report.recommendations?.skills || []).slice(0, 6).map((skill, index) => (
+                    {report.recommendations.skills.slice(0, 6).map((skill, index) => (
                       <div key={index} className="flex items-center gap-2">
                         <div className="h-2 w-2 rounded-full bg-primary"></div>
                         <span className="text-sm">{skill}</span>
@@ -1527,7 +1576,7 @@ export default function ResultsPage() {
               <div className="bg-muted/30 p-6 rounded-lg max-w-md w-full">
                 <h4 className="font-semibold mb-3">Recommended Next Action</h4>
                 <p className="text-muted-foreground text-sm mb-4">
-                  {report.recommendations?.nextAction || 'Proceed to Technical Test'}
+                  {report.recommendations.nextAction || 'Proceed to Technical Test'}
                 </p>
                 
                 <div className="grid grid-cols-1 gap-2">
@@ -1554,7 +1603,7 @@ export default function ResultsPage() {
               <div>
                 <h4 className="font-medium mb-3">Best-Suited Roles</h4>
                 <div className="space-y-2">
-                  {report.recommendations?.careerPaths.slice(0, 3).map((role, index) => (
+                  {report.recommendations.careerPaths.slice(0, 3).map((role, index) => (
                     <div key={index} className="flex gap-3 items-center p-3 rounded-lg bg-muted/50">
                       <div className={`w-2 h-10 rounded-full bg-gradient-to-b ${
                         index === 0 ? 'from-green-400 to-green-600' : 
@@ -1666,3 +1715,45 @@ export default function ResultsPage() {
     </div>
   );
 }
+
+// Chart options
+const radarOptions = {
+  scales: {
+    r: {
+      beginAtZero: true,
+      max: 100,
+      ticks: {
+        stepSize: 20
+      }
+    }
+  },
+  plugins: {
+    legend: {
+      display: false
+    }
+  }
+};
+
+const barOptions = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: 'top' as const
+    }
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      max: 100
+    }
+  }
+};
+
+const pieOptions = {
+  responsive: true,
+  plugins: {
+    legend: {
+      position: 'right' as const
+    }
+  }
+};
