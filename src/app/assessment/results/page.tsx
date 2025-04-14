@@ -512,12 +512,12 @@ export default function ResultsPage() {
   };
   
   const preparePieData = () => {
-    if (!report) return null;
+    if (!report || !report.detailedAnalysis) return null;
     
     // Count strengths and areas for improvement
-    const strengthsCount = report.detailedAnalysis.strengths.length;
-    const improvementCount = report.detailedAnalysis.areasForImprovement.length;
-    const gapsCount = report.detailedAnalysis.skillGaps.length;
+    const strengthsCount = report.detailedAnalysis.strengths?.length || 0;
+    const improvementCount = report.detailedAnalysis.areasForImprovement?.length || 0;
+    const gapsCount = report.detailedAnalysis.skillGaps?.length || 0;
     
     const data = {
       labels: ['Strengths', 'Areas for Improvement', 'Skill Gaps'],
@@ -886,7 +886,7 @@ export default function ResultsPage() {
                 </div>
                 <div className="mt-4 text-center">
                   <h4 className="font-semibold">Next Step</h4>
-                  <p className="text-muted-foreground mt-1">{report.recommendations.nextAction || 'Proceed to Technical Test'}</p>
+                  <p className="text-muted-foreground mt-1">{report.recommendations?.nextAction || 'Proceed to Technical Test'}</p>
                 </div>
               </div>
             </Card>
@@ -1380,9 +1380,9 @@ export default function ResultsPage() {
               
               <div className="mt-6 pt-4 border-t text-center">
                 <p className="text-sm text-muted-foreground">
-                  Based on {report.detailedAnalysis.strengths.length + 
-                    report.detailedAnalysis.areasForImprovement.length + 
-                    report.detailedAnalysis.skillGaps.length} analyzed factors
+                  Based on {report.detailedAnalysis?.strengths?.length || 0 + 
+                    (report.detailedAnalysis?.areasForImprovement?.length || 0) + 
+                    (report.detailedAnalysis?.skillGaps?.length || 0)} analyzed factors
                 </p>
               </div>
             </Card>
@@ -1458,7 +1458,7 @@ export default function ResultsPage() {
                 <div>
                   <h4 className="font-medium mb-3">Key Gap Areas</h4>
                   <ul className="space-y-3">
-                    {report.detailedAnalysis.skillGaps.slice(0, 4).map((gap, index) => (
+                    {(report.detailedAnalysis?.skillGaps || []).slice(0, 4).map((gap, index) => (
                       <li key={index} className="flex gap-3 items-start p-3 bg-muted/50 rounded-lg">
                         <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
                         <span>{gap}</span>
@@ -1470,14 +1470,14 @@ export default function ResultsPage() {
                 <div className="p-4 border rounded-lg bg-primary/5">
                   <h4 className="font-medium mb-2">Industry Insight</h4>
                   <p className="text-sm text-muted-foreground">
-                    Based on current IT industry trends, candidates with strong problem-solving skills, AI literacy, and solid technical fundamentals are most in demand. Your overall gap of {report.detailedAnalysis.industryComparison?.overallGap || 15}% from industry standards can be addressed through targeted skill development.
+                    Based on current IT industry trends, candidates with strong problem-solving skills, AI literacy, and solid technical fundamentals are most in demand. Your overall gap of {report.detailedAnalysis?.industryComparison?.overallGap || 15}% from industry standards can be addressed through targeted skill development.
                   </p>
           </div>
 
                 <div className="p-4 border rounded-lg">
                   <h4 className="font-medium mb-2">Recommended Focus Areas</h4>
                   <div className="grid grid-cols-2 gap-2">
-                    {report.recommendations.skills.slice(0, 6).map((skill, index) => (
+                    {(report.recommendations?.skills || []).slice(0, 6).map((skill, index) => (
                       <div key={index} className="flex items-center gap-2">
                         <div className="h-2 w-2 rounded-full bg-primary"></div>
                         <span className="text-sm">{skill}</span>
@@ -1527,7 +1527,7 @@ export default function ResultsPage() {
               <div className="bg-muted/30 p-6 rounded-lg max-w-md w-full">
                 <h4 className="font-semibold mb-3">Recommended Next Action</h4>
                 <p className="text-muted-foreground text-sm mb-4">
-                  {report.recommendations.nextAction || 'Proceed to Technical Test'}
+                  {report.recommendations?.nextAction || 'Proceed to Technical Test'}
                 </p>
                 
                 <div className="grid grid-cols-1 gap-2">
@@ -1554,7 +1554,7 @@ export default function ResultsPage() {
               <div>
                 <h4 className="font-medium mb-3">Best-Suited Roles</h4>
                 <div className="space-y-2">
-                  {report.recommendations.careerPaths.slice(0, 3).map((role, index) => (
+                  {report.recommendations?.careerPaths.slice(0, 3).map((role, index) => (
                     <div key={index} className="flex gap-3 items-center p-3 rounded-lg bg-muted/50">
                       <div className={`w-2 h-10 rounded-full bg-gradient-to-b ${
                         index === 0 ? 'from-green-400 to-green-600' : 
