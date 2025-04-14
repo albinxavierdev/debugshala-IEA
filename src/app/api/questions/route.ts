@@ -95,7 +95,7 @@ export async function POST(request: Request) {
     const { type, category, questions, provider = 'openai', userId: userIdFromRequest } = body;
     
     // Check for a userId from the request or try to get an authenticated user
-    let userId;
+    let userId: string;
     const { data: authData, error: authError } = await supabase.auth.getUser();
     
     if (!authError && authData.user) {
