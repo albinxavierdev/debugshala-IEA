@@ -45,13 +45,19 @@ type Section = {
   duration: number; // in minutes
   questions: Question[];
   completed: boolean;
-  categories?: { id: string; name: string }[];
+  categories?: {
+    id: string;
+    name: string;
+    level: number;
+    weight: number;
+  }[];
 };
 
 export default function AssessmentTest() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState(60 * 60); // 60 minutes in seconds
   const [userName, setUserName] = useState('');
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
@@ -85,14 +91,14 @@ export default function AssessmentTest() {
       questions: [],
       completed: false,
       categories: [
-        { id: 'core', name: 'Core Work Skills' },
-        { id: 'soft', name: 'Soft Skills' },
-        { id: 'professional', name: 'Professional Development' },
-        { id: 'communication', name: 'Communication Skills' },
-        { id: 'teamwork', name: 'Teamwork & Collaboration' },
-        { id: 'leadership', name: 'Leadership Potential' },
-        { id: 'problem_solving', name: 'Problem Solving' },
-        { id: 'domain', name: 'Domain Knowledge' }
+        { id: 'core', name: 'Core Work Skills', level: 1, weight: 2 },
+        { id: 'soft', name: 'Soft Skills', level: 1, weight: 2 },
+        { id: 'professional', name: 'Professional Development', level: 1, weight: 1 },
+        { id: 'communication', name: 'Communication Skills', level: 1, weight: 2 },
+        { id: 'teamwork', name: 'Teamwork & Collaboration', level: 1, weight: 1 },
+        { id: 'leadership', name: 'Leadership Potential', level: 1, weight: 1 },
+        { id: 'problem_solving', name: 'Problem Solving', level: 1, weight: 2 },
+        { id: 'domain', name: 'Domain Knowledge', level: 1, weight: 1 }
       ]
     }
   ]);
@@ -258,36 +264,25 @@ export default function AssessmentTest() {
   // Also save progress when moving to next question
   const handleNextQuestion = () => {
     const currentSection = sections[currentSectionIndex];
-    
     if (currentQuestionIndex < currentSection.questions.length - 1) {
-      // Move to next question in this section
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      // Mark this section as completed
-      const updatedSections = [...sections];
-      updatedSections[currentSectionIndex].completed = true;
-      setSections(updatedSections);
-
-      // Move to next section if available
-      if (currentSectionIndex < sections.length - 1) {
-        setCurrentSectionIndex(currentSectionIndex + 1);
-        setCurrentQuestionIndex(0);
-        // Load questions for the next section
-        loadQuestionsForSection(currentSectionIndex + 1);
-      } else {
-        // All sections completed
-        handleTestComplete();
-      }
+      setCurrentQuestionIndex(prev => prev + 1);
     }
     
     // Save progress on question navigation
     saveTestProgress();
   };
 
+  const handlePreviousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
+      saveTestProgress();
+    }
+  };
+
   // Move function declarations above useEffect
   const loadQuestionsByCategory = async (category: string, level: number): Promise<Question[]> => {
     try {
-      setLoadingQuestions(true);
+      setQuestionsLoading(true);
       
       console.log(`Loading questions for category: ${category}, level: ${level}`);
       
@@ -300,12 +295,12 @@ export default function AssessmentTest() {
         console.warn('Failed to load questions from API, falling back to offline manager', error);
         
         // Fallback to offline manager if API call fails
-        const questions = await offlineManager.getQuestionsByCategory(category, level);
-        console.log(`Loaded ${questions.length} questions from offline manager`);
-        return questions;
+        const fallbackQuestions = generateFallbackQuestions('employability', 10, category);
+        console.log(`Generated ${fallbackQuestions.length} fallback questions`);
+        return fallbackQuestions;
       }
     } finally {
-      setLoadingQuestions(false);
+      setQuestionsLoading(false);
     }
   };
 
@@ -322,23 +317,29 @@ export default function AssessmentTest() {
       // Reset section state
       setCurrentSectionIndex(sectionIndex);
       setCurrentQuestionIndex(0);
-      setLoadingQuestions(true);
+      setQuestionsLoading(true);
       
       let sectionQuestions: Question[] = [];
       
-      // Load questions for each category in this section
-      for (const category of section.categories) {
-        const categoryQuestions = await loadQuestionsByCategory(
-          category.name,
-          category.level
-        );
-        
-        // Create weighted copies of questions based on category weight
-        const weightedQuestions = Array(category.weight)
-          .fill(null)
-          .flatMap(() => categoryQuestions);
-        
-        sectionQuestions = [...sectionQuestions, ...weightedQuestions];
+      // Load questions based on section type
+      if (section.type === 'employability' && section.categories?.length) {
+        // Load questions for each category in employability section
+        for (const category of section.categories) {
+          const categoryQuestions = await loadQuestionsByCategory(
+            category.name,
+            category.level
+          );
+          
+          // Create weighted copies of questions based on category weight
+          const weightedQuestions = Array(category.weight)
+            .fill(null)
+            .flatMap(() => categoryQuestions);
+          
+          sectionQuestions = [...sectionQuestions, ...weightedQuestions];
+        }
+      } else {
+        // Handle aptitude and programming sections
+        sectionQuestions = generateFallbackQuestions(section.type, 10);
       }
       
       // Shuffle questions and limit to the section's question count
@@ -361,7 +362,7 @@ export default function AssessmentTest() {
       // Show an error message to the user
       toast.error('Failed to load questions. Please try again.');
     } finally {
-      setLoadingQuestions(false);
+      setQuestionsLoading(false);
     }
   };
 
