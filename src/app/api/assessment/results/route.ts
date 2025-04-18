@@ -181,7 +181,15 @@ export async function POST(request: Request) {
     // Sanitize the data
     const sanitizedResult = sanitizeObject(resultObject);
     
-    // Save to database
+    // Add detailed logging
+    console.log('Attempting to save to assessment_results table with payload:', {
+      user_id: userId,
+      provider,
+      created_at: new Date().toISOString(),
+      results_size: JSON.stringify(sanitizedResult).length
+    });
+    
+    // First try regular insert
     const { data, error } = await supabase
       .from('assessment_results')
       .insert({
@@ -192,13 +200,90 @@ export async function POST(request: Request) {
       })
       .select();
     
+    // If there's an error, try fallback methods
     if (error) {
       console.error('Database error:', error);
+      console.error('Error details:', JSON.stringify(error));
+      
+      // If the error is related to foreign key constraint, try a direct SQL insert
+      if (error.code === '23503') { // Foreign key violation
+        console.log('Foreign key constraint error. Trying direct SQL insert...');
+        
+        try {
+          // First create the user if missing
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .insert({
+              id: userId,
+              name: formData.name || 'Anonymous',
+              email: formData.email || `anonymous-${userId}@example.com`,
+              phone: formData.phone,
+              degree: formData.degree,
+              graduation_year: formData.graduationYear,
+              college_name: formData.collegeName,
+              interested_domains: formData.interestedDomains || []
+            })
+            .select();
+          
+          if (userError) {
+            console.warn('Failed to create user, continuing anyway:', userError);
+          }
+          
+          // Try inserting with direct SQL to bypass FK constraints
+          const insertTimestamp = new Date().toISOString();
+          const jsonResults = JSON.stringify(sanitizedResult);
+          
+          // Use a direct insert into the table
+          const directInsertResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/rest/v1/assessment_results`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+                'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''}`
+              },
+              body: JSON.stringify({
+                user_id: userId,
+                results: sanitizedResult,
+                provider,
+                created_at: insertTimestamp
+              })
+            }
+          );
+          
+          if (!directInsertResponse.ok) {
+            throw new Error(`Direct insert failed with status ${directInsertResponse.status}`);
+          }
+          
+          const directResult = await directInsertResponse.json();
+          console.log('Successfully inserted via direct SQL:', directResult);
+          
+          return NextResponse.json({
+            success: true,
+            message: 'Assessment results saved via direct SQL',
+            assessment: directResult[0] || { id: 'unknown', created_at: insertTimestamp }
+          });
+        } catch (directError) {
+          console.error('Direct SQL insert also failed:', directError);
+          return NextResponse.json(
+            { 
+              error: 'Failed to save assessment results via all methods',
+              original: error,
+              directError
+            },
+            { status: 500 }
+          );
+        }
+      }
+      
       return NextResponse.json(
-        { error: 'Failed to save assessment results' },
+        { error: 'Failed to save assessment results', details: error },
         { status: 500 }
       );
     }
+    
+    console.log('Successfully saved assessment results:', data);
     
     return NextResponse.json({ 
       success: true, 

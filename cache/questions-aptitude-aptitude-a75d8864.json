@@ -1,0 +1,169 @@
+{
+  "sectionType": "aptitude",
+  "category": "aptitude",
+  "userId": "a75d8864-0326-48be-a562-9458cfe3c8d3",
+  "timestamp": 1744959997272,
+  "questions": [
+    {
+      "id": "Q1",
+      "type": "mcq",
+      "question": "What is the result of 15 + 27?",
+      "options": [
+        "40",
+        "42",
+        "37",
+        "32"
+      ],
+      "correctAnswer": "42",
+      "explanation": "The correct answer is 42 because 15 + 27 equals 42.",
+      "difficulty": "easy",
+      "category": "numerical",
+      "timeLimit": 60
+    },
+    {
+      "id": "Q2",
+      "type": "mcq",
+      "question": "Which number comes next in the series: 2, 5, 10, 17, ____?",
+      "options": [
+        "25",
+        "26",
+        "27",
+        "28"
+      ],
+      "correctAnswer": "26",
+      "explanation": "The correct answer is 26 as the series follows a pattern of adding consecutive odd numbers.",
+      "difficulty": "medium",
+      "category": "pattern",
+      "timeLimit": 60
+    },
+    {
+      "id": "Q3",
+      "type": "mcq",
+      "question": "If X = 8 and Y = 3, what is X^2 - 3Y?",
+      "options": [
+        "61",
+        "64",
+        "55",
+        "49"
+      ],
+      "correctAnswer": "61",
+      "explanation": "The correct answer is 61 as X^2 - 3Y = 64 - 9 = 61.",
+      "difficulty": "medium",
+      "category": "problem_solving",
+      "timeLimit": 60
+    },
+    {
+      "id": "Q4",
+      "type": "mcq",
+      "question": "Which of the following is a prime number?",
+      "options": [
+        "15",
+        "20",
+        "29",
+        "40"
+      ],
+      "correctAnswer": "29",
+      "explanation": "The correct answer is 29 as it is only divisible by 1 and itself, making it a prime number.",
+      "difficulty": "easy",
+      "category": "logical",
+      "timeLimit": 60
+    },
+    {
+      "id": "Q5",
+      "type": "mcq",
+      "question": "What is the next letter in the series: A, C, F, J, ____?",
+      "options": [
+        "O",
+        "P",
+        "Q",
+        "R"
+      ],
+      "correctAnswer": "O",
+      "explanation": "The correct answer is O as each letter is increasing by consecutive prime numbers.",
+      "difficulty": "medium",
+      "category": "pattern",
+      "timeLimit": 60
+    },
+    {
+      "id": "Q6",
+      "type": "mcq",
+      "question": "If a car travels 240 miles in 4 hours, what is its average speed?",
+      "options": [
+        "50 mph",
+        "55 mph",
+        "60 mph",
+        "65 mph"
+      ],
+      "correctAnswer": "60 mph",
+      "explanation": "The correct answer is 60 mph as average speed = total distance / total time = 240 / 4 = 60 mph.",
+      "difficulty": "easy",
+      "category": "numerical",
+      "timeLimit": 60
+    },
+    {
+      "id": "Q7",
+      "type": "mcq",
+      "question": "Solve for X: 3X + 7 = 16",
+      "options": [
+        "3",
+        "4",
+        "5",
+        "6"
+      ],
+      "correctAnswer": "3",
+      "explanation": "The correct answer is 3 as 3X + 7 = 16, then 3X = 16 - 7 = 9, so X = 9 / 3 = 3.",
+      "difficulty": "medium",
+      "category": "problem_solving",
+      "timeLimit": 60
+    },
+    {
+      "id": "Q8",
+      "type": "mcq",
+      "question": "Which shape comes next in the series: Square, Circle, Triangle, Pentagon, ____?",
+      "options": [
+        "Hexagon",
+        "Octagon",
+        "Star",
+        "Oval"
+      ],
+      "correctAnswer": "Hexagon",
+      "explanation": "The correct answer is Hexagon as the series follows the number of sides in each shape.",
+      "difficulty": "medium",
+      "category": "pattern",
+      "timeLimit": 60
+    },
+    {
+      "id": "Q9",
+      "type": "mcq",
+      "question": "If 2^X = 16, what is the value of X?",
+      "options": [
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "correctAnswer": "4",
+      "explanation": "The correct answer is 4 as 2^4 equals 16.",
+      "difficulty": "easy",
+      "category": "logical",
+      "timeLimit": 60
+    },
+    {
+      "id": "Q10",
+      "type": "mcq",
+      "question": "What is the missing number in the series: 2, 6, 12, __, 30?",
+      "options": [
+        "18",
+        "20",
+        "22",
+        "24"
+      ],
+      "correctAnswer": "20",
+      "explanation": "The correct answer is 20 as each number in the series is multiplied by increasing odd numbers.",
+      "difficulty": "hard",
+      "category": "pattern",
+      "timeLimit": 60
+    }
+  ],
+  "version": 1
+}

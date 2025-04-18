@@ -1,0 +1,169 @@
+{
+  "sectionType": "programming",
+  "category": "programming",
+  "userId": null,
+  "timestamp": 1744960556196,
+  "questions": [
+    {
+      "id": "1",
+      "type": "mcq",
+      "question": "What is the time complexity of binary search?",
+      "options": [
+        "O(1)",
+        "O(log n)",
+        "O(n)",
+        "O(n log n)"
+      ],
+      "correctAnswer": "O(log n)",
+      "explanation": "Binary search has a time complexity of O(log n) because it halves the search space at each step.",
+      "difficulty": "medium",
+      "category": "algorithms",
+      "timeLimit": 90
+    },
+    {
+      "id": "2",
+      "type": "mcq",
+      "question": "Which data structure uses LIFO (Last In, First Out) principle?",
+      "options": [
+        "Queue",
+        "Stack",
+        "Linked List",
+        "Hash Table"
+      ],
+      "correctAnswer": "Stack",
+      "explanation": "A Stack follows the LIFO principle where the last element added is the first one to be removed.",
+      "difficulty": "easy",
+      "category": "data structures",
+      "timeLimit": 90
+    },
+    {
+      "id": "3",
+      "type": "mcq",
+      "question": "What does the acronym 'HTTP' stand for?",
+      "options": [
+        "HyperText Transfer Protocol",
+        "High Tech Programming",
+        "Hyper Terminal Transfer Processing",
+        "Host Text Transmission Protocol"
+      ],
+      "correctAnswer": "HyperText Transfer Protocol",
+      "explanation": "'HTTP' stands for HyperText Transfer Protocol, which is the foundation of data communication on the World Wide Web.",
+      "difficulty": "easy",
+      "category": "concepts",
+      "timeLimit": 60
+    },
+    {
+      "id": "4",
+      "type": "mcq",
+      "question": "Which of the following is NOT a valid debugging technique?",
+      "options": [
+        "Code Review",
+        "Breakpoint",
+        "Random Testing",
+        "Logging"
+      ],
+      "correctAnswer": "Random Testing",
+      "explanation": "Random Testing is not a systematic debugging technique and may not effectively pinpoint issues in code.",
+      "difficulty": "medium",
+      "category": "debugging",
+      "timeLimit": 90
+    },
+    {
+      "id": "5",
+      "type": "mcq",
+      "question": "What is the purpose of a 'for' loop in programming?",
+      "options": [
+        "To declare a function",
+        "To define a class",
+        "To iterate over a sequence of elements",
+        "To perform arithmetic operations"
+      ],
+      "correctAnswer": "To iterate over a sequence of elements",
+      "explanation": "A 'for' loop is used to iterate over a sequence of elements and perform repetitive tasks efficiently.",
+      "difficulty": "easy",
+      "category": "concepts",
+      "timeLimit": 90
+    },
+    {
+      "id": "6",
+      "type": "mcq",
+      "question": "Which sorting algorithm has the best average-case time complexity?",
+      "options": [
+        "Bubble Sort",
+        "Insertion Sort",
+        "Merge Sort",
+        "Selection Sort"
+      ],
+      "correctAnswer": "Merge Sort",
+      "explanation": "Merge Sort has an average-case time complexity of O(n log n) making it efficient for sorting large datasets.",
+      "difficulty": "medium",
+      "category": "algorithms",
+      "timeLimit": 90
+    },
+    {
+      "id": "7",
+      "type": "mcq",
+      "question": "What is the main advantage of using a hash table for data storage?",
+      "options": [
+        "Constant-time lookup",
+        "Sequential access",
+        "Limited storage capacity",
+        "Slow insertion time"
+      ],
+      "correctAnswer": "Constant-time lookup",
+      "explanation": "Hash tables offer constant-time lookup which allows for efficient retrieval of data based on keys.",
+      "difficulty": "easy",
+      "category": "data structures",
+      "timeLimit": 90
+    },
+    {
+      "id": "8",
+      "type": "mcq",
+      "question": "Which of the following is an example of a syntax error in programming?",
+      "options": [
+        "Dividing by zero",
+        "Accessing an out-of-bounds array element",
+        "Forgetting to close a parenthesis",
+        "Using an uninitialized variable"
+      ],
+      "correctAnswer": "Forgetting to close a parenthesis",
+      "explanation": "Forgetting to close a parenthesis leads to a syntax error as the code structure is not properly formed.",
+      "difficulty": "medium",
+      "category": "debugging",
+      "timeLimit": 90
+    },
+    {
+      "id": "9",
+      "type": "mcq",
+      "question": "What is the purpose of a 'linked list' in data structures?",
+      "options": [
+        "Efficient searching",
+        "Random access",
+        "Dynamic memory allocation",
+        "Hierarchical storage"
+      ],
+      "correctAnswer": "Dynamic memory allocation",
+      "explanation": "A linked list allows for dynamic memory allocation and flexible insertion/deletion of elements in a data structure.",
+      "difficulty": "medium",
+      "category": "data structures",
+      "timeLimit": 90
+    },
+    {
+      "id": "10",
+      "type": "mcq",
+      "question": "What is the role of a 'constructor' in object-oriented programming?",
+      "options": [
+        "To destroy objects",
+        "To initialize objects",
+        "To copy objects",
+        "To override objects"
+      ],
+      "correctAnswer": "To initialize objects",
+      "explanation": "A constructor is a special method used to initialize objects when they are created in object-oriented programming.",
+      "difficulty": "easy",
+      "category": "concepts",
+      "timeLimit": 60
+    }
+  ],
+  "version": 1
+}

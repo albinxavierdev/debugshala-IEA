@@ -1,3 +1,61 @@
+import { AssessmentResult } from '@/types/assessment';
+
+const CACHE_PREFIX = 'assessment_report_';
+const CACHE_EXPIRY = 1000 * 60 * 60; // 1 hour
+
+interface CacheEntry {
+  data: AssessmentResult;
+  timestamp: number;
+}
+
+export function getCachedReport(userId: string): AssessmentResult | null {
+  try {
+    const cacheKey = CACHE_PREFIX + userId;
+    const cachedData = localStorage.getItem(cacheKey);
+    
+    if (!cachedData) {
+      return null;
+    }
+    
+    const entry: CacheEntry = JSON.parse(cachedData);
+    const now = Date.now();
+    
+    // Check if cache has expired
+    if (now - entry.timestamp > CACHE_EXPIRY) {
+      localStorage.removeItem(cacheKey);
+      return null;
+    }
+    
+    return entry.data;
+  } catch (error) {
+    console.warn('Error reading from cache:', error);
+    return null;
+  }
+}
+
+export function cacheReport(userId: string, report: AssessmentResult): void {
+  try {
+    const cacheKey = CACHE_PREFIX + userId;
+    const entry: CacheEntry = {
+      data: report,
+      timestamp: Date.now()
+    };
+    
+    localStorage.setItem(cacheKey, JSON.stringify(entry));
+  } catch (error) {
+    console.warn('Error writing to cache:', error);
+  }
+}
+
+export function clearCachedReport(userId: string): void {
+  try {
+    const cacheKey = CACHE_PREFIX + userId;
+    localStorage.removeItem(cacheKey);
+  } catch (error) {
+    console.warn('Error clearing cache:', error);
+  }
+}
+
 interface CacheOptions {
   ttl: number; // Time to live in milliseconds
   realtime?: boolean; // Flag to bypass cache for real-time data

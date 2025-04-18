@@ -7,7 +7,7 @@ export interface FormData {
   degree: string;
   graduationYear: string;
   collegeName: string;
-  interestedDomains: string[];
+  interestedDomain: string;
   preferredLanguage?: string;
 }
 
@@ -105,61 +105,147 @@ export interface AssessmentResult {
   };
 }
 
+export type QuestionDifficulty = 'easy' | 'medium' | 'hard';
+export type QuestionType = 'mcq' | 'coding';
+export type SectionType = 'aptitude' | 'programming' | 'employability';
+
 export interface Question {
   id: string;
-  type: 'mcq' | 'coding';
+  type: QuestionType;
   question: string;
   options?: string[];
-  correctAnswer: string;
+  correctAnswer: string | number;
   explanation?: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: QuestionDifficulty;
   category?: string;
   categoryName?: string;
   timeLimit?: number;
-  skillTags?: string[];
 }
 
-export type QuestionType = 'aptitude' | 'programming' | 'employability';
-export type EmployabilityCategory = 'core' | 'soft' | 'professional' | 'communication' | 'teamwork' | 'leadership' | 'problem_solving' | 'domain';
-
-export interface EmployabilityScores {
-  core: number;
-  soft: number;
-  professional: number;
-  communication?: number;
-  teamwork?: number;
-  leadership?: number;
-  problem_solving?: number;
-  domain?: number;
-}
-
-export interface Scores {
-  aptitude: number;
-  programming: number;
-  employability: number | EmployabilityScores;
-  total?: number;
-  percentile?: number;
-  readinessScore?: number;
-}
-
-export interface SectionDetails {
-  totalQuestions: number;
-  correctAnswers: number;
-  accuracy: number;
-  strengths: string[];
-  weakAreas: string[];
-  softSkillsScore?: number;
-  professionalSkillsScore?: number;
-  aiLiteracyScore?: number;
+export interface Category {
+  id: string;
+  name: string;
+  level: number;
+  weight: number;
 }
 
 export interface Section {
   id: string;
   title: string;
-  subtitle?: string;
-  type: QuestionType;
-  category?: EmployabilityCategory;
+  type: SectionType;
+  category?: string;
+  description: string;
+  duration: number; // in minutes
   questions: Question[];
-  duration: number;
-  completed?: boolean;
+  completed: boolean;
+  categories?: Category[];
+  loaded?: boolean;
+}
+
+export interface AssessmentState {
+  sections: Section[];
+  currentSectionIndex: number;
+  currentQuestionIndex: number;
+  userAnswers: Record<string, string>;
+  timeRemaining: number;
+  userName: string;
+  loading: {
+    initial: boolean;
+    questions: boolean;
+    submitting: boolean;
+  };
+  cacheSource?: string;
+}
+
+export interface TestProgress {
+  sections: Section[];
+  userAnswers: Record<string, string>;
+  currentSectionIndex: number;
+  currentQuestionIndex: number;
+  timeRemaining: number;
+  timestamp: string;
+}
+
+export interface EmployabilityScores {
+  core: number;
+  soft: number;
+  professional: number;
+  communication: number;
+  teamwork: number;
+  leadership: number;
+  problem_solving: number;
+  domain: number;
+}
+
+export interface AssessmentScores {
+  aptitude: number;
+  programming: number;
+  employability: EmployabilityScores;
+  total: number;
+  percentile: number;
+  readinessScore: number;
+}
+
+export interface UserContext {
+  name?: string;
+  interests?: string[];
+  degree?: string;
+  graduationYear?: string;
+  collegeName?: string;
+}
+
+export interface DetailedAnalysis {
+  sections: Record<string, SectionAnalysis>;
+  performance: {
+    strengths: Array<{ category: string; score: number }>;
+    weaknesses: Array<{ category: string; score: number }>;
+    timeEfficiency: Record<string, number>;
+    answeredByDifficulty: Record<QuestionDifficulty, number>;
+    correctByDifficulty: Record<QuestionDifficulty, number>;
+    totalByDifficulty: Record<QuestionDifficulty, number>;
+  };
+  recommendations: Array<{
+    type: string;
+    category?: string;
+    message: string;
+    resources?: Array<{ name: string; url: string }>;
+  }>;
+}
+
+export interface SectionAnalysis {
+  score: number;
+  answeredCount: number;
+  correctCount: number;
+  categories: Record<string, {
+    totalQuestions: number;
+    answeredQuestions: number;
+    correctAnswers: number;
+  }>;
+  questionBreakdown: Array<{
+    questionId: string;
+    difficulty: QuestionDifficulty;
+    category: string;
+    isAnswered: boolean;
+    isCorrect: boolean;
+    timeTaken: number;
+  }>;
+}
+
+export interface QuestionTemplate {
+  id: string;
+  template: string;
+  category: string;
+  difficulty: QuestionDifficulty;
+  variables: () => Record<string, any>;
+  generateOptions: (vars: Record<string, any>) => {
+    options: string[];
+    correctAnswer: string;
+    explanation: string;
+  };
+}
+
+export interface AssessmentError extends Error {
+  category: string;
+  details: Record<string, any>;
+  timestamp: string;
 } 

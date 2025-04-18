@@ -83,12 +83,11 @@ export async function GET(request: Request) {
 // Create or update user
 export async function POST(request: Request) {
   try {
-    // Get URL and check for debug parameter
-    const url = new URL(request.url);
-    const debugMode = url.searchParams.get('debug') === 'true';
-    
     // Parse request body
     const formData = await request.json();
+    
+    // Create a safe reference for error reporting
+    const safeEmail = formData?.email || 'unknown';
     
     // Check if userId is provided in the request (for anonymous users)
     const userIdFromRequest = formData.userId;
@@ -104,15 +103,10 @@ export async function POST(request: Request) {
       // For anonymous users, use the provided ID after validation
       // Validate that the ID is in UUID format
       if (!isValidUUID(userIdFromRequest)) {
-        if (debugMode) {
-          console.warn('Invalid UUID format but continuing in debug mode');
-          userId = userIdFromRequest;
-        } else {
-          return NextResponse.json(
-            { error: 'Invalid user ID format. Must be a valid UUID.' },
-            { status: 400 }
-          );
-        }
+        return NextResponse.json(
+          { error: 'Invalid user ID format. Must be a valid UUID.' },
+          { status: 400 }
+        );
       } else {
         userId = userIdFromRequest;
         console.log('Using anonymous user ID (validated UUID):', userId);
@@ -147,20 +141,6 @@ export async function POST(request: Request) {
       preferredLanguage: sanitizedData.preferredLanguage || null
     });
     
-    // If in debug mode, bypass database operations but return success
-    if (debugMode) {
-      console.log('Debug mode active, bypassing database operations');
-      return NextResponse.json({ 
-        success: true,
-        user: {
-          id: userId,
-          ...baseUserData,
-          interested_domains: interestedDomains,
-          debug_mode: true
-        }
-      });
-    }
-    
     // Prepare data for database
     const userData = {
       id: userId,
@@ -183,7 +163,7 @@ export async function POST(request: Request) {
           .select();
         
         if (error) {
-          console.error('Database error:', error);
+          console.error('Database error during user upsert:', error);
           throw error;
         }
         
@@ -211,14 +191,42 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Error in POST /api/users:', error);
     
-    // Return appropriate status code based on error
-    const statusCode = error.code === '23505' ? 409 : 500; // 409 for unique constraint violations
+    // Check for duplicate/unique constraint violation errors 
+    // Supabase/PostgreSQL codes: 23505 for unique constraint violations
+    let statusCode = 500;
+    let errorMessage = 'Failed to save user data';
+    let errorCode = error.code || 'UNKNOWN';
+    
+    // Determine specific error type for better client handling
+    if (error.code === '23505' || 
+        (error.message && error.message.toLowerCase().includes('duplicate key')) || 
+        (error.message && error.message.toLowerCase().includes('unique constraint'))) {
+      
+      statusCode = 409; // Conflict status code
+      errorMessage = 'Email already registered';
+      errorCode = 'DUPLICATE_USER';
+      
+      // Try to extract which field caused the duplicate error
+      if (error.detail) {
+        if (error.detail.includes('email')) {
+          errorMessage = 'This email is already registered with another account';
+        } else if (error.detail.includes('phone')) {
+          errorMessage = 'This phone number is already registered';
+        }
+      }
+      
+      console.warn('Duplicate user detected:', {
+        errorDetail: error.detail
+      });
+    }
     
     return NextResponse.json(
       { 
-        error: 'Failed to save user data',
+        success: false,
+        error: errorMessage,
         message: error.message || 'Internal server error',
-        code: error.code || 'UNKNOWN'
+        code: errorCode,
+        field: errorCode === 'DUPLICATE_USER' ? 'email' : undefined
       },
       { status: statusCode }
     );

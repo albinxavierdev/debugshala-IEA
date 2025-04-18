@@ -1,0 +1,169 @@
+{
+  "sectionType": "programming",
+  "category": "programming",
+  "userId": "a75d8864-0326-48be-a562-9458cfe3c8d3",
+  "timestamp": 1744959996255,
+  "questions": [
+    {
+      "id": "Q1",
+      "type": "mcq",
+      "question": "What is the time complexity of the bubble sort algorithm?",
+      "options": [
+        "O(n)",
+        "O(n^2)",
+        "O(log n)",
+        "O(n!)"
+      ],
+      "correctAnswer": "O(n^2)",
+      "explanation": "Bubble sort has a time complexity of O(n^2) due to its nested loop structure.",
+      "difficulty": "easy",
+      "category": "algorithms",
+      "timeLimit": 90
+    },
+    {
+      "id": "Q2",
+      "type": "mcq",
+      "question": "Which data structure uses LIFO (Last In, First Out) principle?",
+      "options": [
+        "Queue",
+        "Heap",
+        "Stack",
+        "Tree"
+      ],
+      "correctAnswer": "Stack",
+      "explanation": "A stack follows the LIFO principle where the last element added is the first element to be removed.",
+      "difficulty": "easy",
+      "category": "data structures",
+      "timeLimit": 90
+    },
+    {
+      "id": "Q3",
+      "type": "mcq",
+      "question": "What does the term 'bug' refer to in programming?",
+      "options": [
+        "An error in logic",
+        "A feature request",
+        "A hardware issue",
+        "A software update"
+      ],
+      "correctAnswer": "An error in logic",
+      "explanation": "A bug in programming refers to an error in the code that causes unexpected behavior.",
+      "difficulty": "easy",
+      "category": "debugging",
+      "timeLimit": 90
+    },
+    {
+      "id": "Q4",
+      "type": "mcq",
+      "question": "What is the concept of 'inheritance' in object-oriented programming?",
+      "options": [
+        "Ability to access data from external APIs",
+        "Ability to reuse and extend existing classes",
+        "Ability to store data in a database",
+        "Ability to handle exceptions"
+      ],
+      "correctAnswer": "Ability to reuse and extend existing classes",
+      "explanation": "Inheritance allows a class to inherit attributes and methods from another class, promoting code reusability.",
+      "difficulty": "medium",
+      "category": "concepts",
+      "timeLimit": 90
+    },
+    {
+      "id": "Q5",
+      "type": "mcq",
+      "question": "Which sorting algorithm has the best time complexity in most cases?",
+      "options": [
+        "Bubble Sort",
+        "Insertion Sort",
+        "Merge Sort",
+        "Selection Sort"
+      ],
+      "correctAnswer": "Merge Sort",
+      "explanation": "Merge Sort typically has a time complexity of O(n log n), making it more efficient compared to other sorting algorithms.",
+      "difficulty": "medium",
+      "category": "algorithms",
+      "timeLimit": 90
+    },
+    {
+      "id": "Q6",
+      "type": "mcq",
+      "question": "What is a common method for debugging code to find errors?",
+      "options": [
+        "Unit testing",
+        "Refactoring code",
+        "Adding more features",
+        "Ignoring the errors"
+      ],
+      "correctAnswer": "Unit testing",
+      "explanation": "Unit testing involves writing test cases to validate individual units of code, helping identify errors and ensure code quality.",
+      "difficulty": "medium",
+      "category": "debugging",
+      "timeLimit": 90
+    },
+    {
+      "id": "Q7",
+      "type": "mcq",
+      "question": "Which data structure is typically used to implement a priority queue?",
+      "options": [
+        "Array",
+        "Linked List",
+        "Heap",
+        "Stack"
+      ],
+      "correctAnswer": "Heap",
+      "explanation": "A binary heap is commonly used to implement a priority queue due to its efficient operations for insertion and deletion.",
+      "difficulty": "medium",
+      "category": "data structures",
+      "timeLimit": 90
+    },
+    {
+      "id": "Q8",
+      "type": "mcq",
+      "question": "What is the purpose of the 'break' statement in loops?",
+      "options": [
+        "To exit the loop entirely",
+        "To skip the current iteration and proceed to the next",
+        "To restart the loop from the beginning",
+        "To print a message"
+      ],
+      "correctAnswer": "To exit the loop entirely",
+      "explanation": "The 'break' statement is used to terminate the loop prematurely and exit the loop entirely.",
+      "difficulty": "hard",
+      "category": "concepts",
+      "timeLimit": 90
+    },
+    {
+      "id": "Q9",
+      "type": "mcq",
+      "question": "What is a hash table used for in data structures?",
+      "options": [
+        "Storing data in sorted order",
+        "Performing quicksort operations",
+        "Implementing priority queues",
+        "Storing key-value pairs for fast lookup"
+      ],
+      "correctAnswer": "Storing key-value pairs for fast lookup",
+      "explanation": "A hash table uses a hash function to map keys to their associated values, enabling fast retrieval of data based on the key.",
+      "difficulty": "hard",
+      "category": "data structures",
+      "timeLimit": 90
+    },
+    {
+      "id": "Q10",
+      "type": "mcq",
+      "question": "What is the purpose of recursion in programming?",
+      "options": [
+        "To repeat a set of instructions",
+        "To avoid using loops",
+        "To divide a problem into smaller subproblems",
+        "To increase code complexity"
+      ],
+      "correctAnswer": "To divide a problem into smaller subproblems",
+      "explanation": "Recursion involves solving a problem by breaking it down into smaller instances of the same problem, simplifying complex tasks.",
+      "difficulty": "hard",
+      "category": "concepts",
+      "timeLimit": 90
+    }
+  ],
+  "version": 1
+}

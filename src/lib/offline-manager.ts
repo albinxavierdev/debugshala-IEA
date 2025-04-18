@@ -1,4 +1,5 @@
 import { errorHandler } from './error-handler';
+import { ErrorLevel } from './error-handler';
 
 interface QueuedRequest {
   id: string;
@@ -86,7 +87,11 @@ class OfflineManager {
       "Your connection has been restored.",
       {
         title: "Back Online",
-        level: "info" as any
+        level: ErrorLevel.INFO,
+        additionalInfo: {
+          connectionStatus: 'online',
+          timestamp: new Date().toISOString()
+        }
       }
     );
     
@@ -108,7 +113,11 @@ class OfflineManager {
       "You are currently offline. Some features may be unavailable.",
       {
         title: "Offline Mode",
-        level: "warning" as any
+        level: ErrorLevel.WARNING,
+        additionalInfo: {
+          connectionStatus: 'offline',
+          timestamp: new Date().toISOString()
+        }
       }
     );
   }
@@ -221,7 +230,13 @@ class OfflineManager {
             `Request to ${request.url} failed permanently after ${request.maxRetries} attempts.`,
             {
               title: "Sync Failed",
-              level: "error" as any
+              level: ErrorLevel.ERROR,
+              additionalInfo: {
+                requestId: request.id,
+                url: request.url,
+                attempts: request.retries,
+                timestamp: new Date().toISOString()
+              }
             }
           );
         }

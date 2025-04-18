@@ -1,0 +1,169 @@
+{
+  "sectionType": "aptitude",
+  "category": "aptitude",
+  "userId": null,
+  "timestamp": 1744960551051,
+  "questions": [
+    {
+      "id": "1",
+      "type": "mcq",
+      "question": "What is the result of 25 * 4 - 10 / 2?",
+      "options": [
+        "90",
+        "100",
+        "110",
+        "120"
+      ],
+      "correctAnswer": "100",
+      "explanation": "To solve the expression, follow the order of operations - multiplication first, then subtraction, and finally division.",
+      "difficulty": "easy",
+      "category": "numerical",
+      "timeLimit": 60
+    },
+    {
+      "id": "2",
+      "type": "mcq",
+      "question": "Which number comes next in the sequence: 2, 6, 12, 20, ___?",
+      "options": [
+        "28",
+        "30",
+        "34",
+        "36"
+      ],
+      "correctAnswer": "30",
+      "explanation": "The sequence follows the pattern of adding consecutive even numbers starting from 2.",
+      "difficulty": "medium",
+      "category": "pattern",
+      "timeLimit": 60
+    },
+    {
+      "id": "3",
+      "type": "mcq",
+      "question": "If teena scored 85 in the first test, 90 in the second test, and 95 in the third test, what is her average score?",
+      "options": [
+        "85",
+        "90",
+        "92",
+        "93"
+      ],
+      "correctAnswer": "90",
+      "explanation": "To find the average, sum up all scores and divide by the number of tests.",
+      "difficulty": "easy",
+      "category": "problem_solving",
+      "timeLimit": 60
+    },
+    {
+      "id": "4",
+      "type": "mcq",
+      "question": "Which of the following is a prime number? 27, 31, 40, 49",
+      "options": [
+        "27",
+        "31",
+        "40",
+        "49"
+      ],
+      "correctAnswer": "31",
+      "explanation": "A prime number is a number greater than 1 that is only divisible by 1 and itself.",
+      "difficulty": "medium",
+      "category": "logical",
+      "timeLimit": 60
+    },
+    {
+      "id": "5",
+      "type": "mcq",
+      "question": "What is the missing number in the series: 3, 9, 27, __, 243?",
+      "options": [
+        "54",
+        "81",
+        "108",
+        "81"
+      ],
+      "correctAnswer": "81",
+      "explanation": "Each number in the series is obtained by multiplying the previous number by 3.",
+      "difficulty": "medium",
+      "category": "pattern",
+      "timeLimit": 60
+    },
+    {
+      "id": "6",
+      "type": "mcq",
+      "question": "If x = 5 and y = 3, what is the value of 2x + 3y?",
+      "options": [
+        "11",
+        "13",
+        "15",
+        "17"
+      ],
+      "correctAnswer": "19",
+      "explanation": "Substitute the values of x and y into the expression and perform the arithmetic operations.",
+      "difficulty": "easy",
+      "category": "numerical",
+      "timeLimit": 60
+    },
+    {
+      "id": "7",
+      "type": "mcq",
+      "question": "Which of the following shapes does not belong to the series? Circle, Square, Triangle, Rectangle",
+      "options": [
+        "Circle",
+        "Square",
+        "Triangle",
+        "Rectangle"
+      ],
+      "correctAnswer": "Circle",
+      "explanation": "All shapes are polygons except for the circle, which is a closed curve.",
+      "difficulty": "medium",
+      "category": "logical",
+      "timeLimit": 60
+    },
+    {
+      "id": "8",
+      "type": "mcq",
+      "question": "Simplify: 3(2x + 4) - 2(3x - 1)",
+      "options": [
+        "6x + 10",
+        "4x + 2",
+        "2x + 6",
+        "8x + 2"
+      ],
+      "correctAnswer": "8x + 2",
+      "explanation": "Apply the distributive property and combine like terms to simplify the expression.",
+      "difficulty": "hard",
+      "category": "problem_solving",
+      "timeLimit": 60
+    },
+    {
+      "id": "9",
+      "type": "mcq",
+      "question": "If a car travels at a speed of 60 km/h, how far will it travel in 3 hours?",
+      "options": [
+        "120 km",
+        "150 km",
+        "180 km",
+        "210 km"
+      ],
+      "correctAnswer": "180 km",
+      "explanation": "Distance = Speed * Time. Calculate the distance covered by the car in 3 hours.",
+      "difficulty": "easy",
+      "category": "numerical",
+      "timeLimit": 60
+    },
+    {
+      "id": "10",
+      "type": "mcq",
+      "question": "What is the next number in the series: 1, 4, 9, 16, ___?",
+      "options": [
+        "24",
+        "25",
+        "36",
+        "49"
+      ],
+      "correctAnswer": "25",
+      "explanation": "The series represents the squares of consecutive natural numbers.",
+      "difficulty": "medium",
+      "category": "pattern",
+      "timeLimit": 60
+    }
+  ],
+  "version": 1
+}

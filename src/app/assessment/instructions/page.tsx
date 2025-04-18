@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,20 @@ const getLocalStorage = () => {
 export default function InstructionsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [checkingCompletion, setCheckingCompletion] = useState(true);
+
+  // Check if user has already completed a test
+  useEffect(() => {
+    const storage = getLocalStorage();
+    const testCompleted = storage?.getItem('debugshala_test_completed') === 'true';
+    
+    if (testCompleted) {
+      // If test completed, redirect to completion page
+      router.push('/assessment/complete');
+    } else {
+      setCheckingCompletion(false);
+    }
+  }, [router]);
 
   const handleStartTest = () => {
     setLoading(true);
@@ -29,6 +43,18 @@ export default function InstructionsPage() {
     }
     router.push('/assessment/test');
   };
+
+  // Show loading state while checking completion status
+  if (checkingCompletion) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 animate-spin mx-auto text-primary" />
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background py-12 px-4 sm:px-6 lg:px-8">
