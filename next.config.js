@@ -5,7 +5,7 @@ const nextConfig = {
     domains: ['wb.bizfy.in'],
     unoptimized: process.env.NODE_ENV === 'development'
   },
-  swcMinify: true,
+  // swcMinify: true,
   poweredByHeader: false,
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production'
