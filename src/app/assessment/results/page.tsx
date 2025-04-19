@@ -75,6 +75,9 @@ const fallbackResult: AssessmentResult = {
     interestedDomains: ["Web Development", "Machine Learning"],
     preferredLanguage: "JavaScript"
   },
+  type: "employability",
+  questions: [],
+  answers: {},
   scores: {
     aptitude: 75,
     programming: 68,
@@ -228,7 +231,10 @@ export default function ResultsPage() {
               const minimalReport: AssessmentResult = {
                 ...fallbackResult,
                 scores,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                type: "employability",
+                questions: [],
+                answers: {}
               };
               
               setReport(minimalReport);
