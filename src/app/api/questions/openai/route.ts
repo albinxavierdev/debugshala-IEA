@@ -338,7 +338,7 @@ export async function POST(request: Request) {
                       'Work longer hours until everything is complete',
                       'Prioritize tasks, communicate your capacity issues, and propose solutions to your manager',
                       'Complete only the most visible tasks and hope no one notices the rest',
-                      'Tell your manager you can't handle the pressure and need fewer responsibilities'
+                      'Tell your manager you can\'t handle the pressure and need fewer responsibilities'
                     ],
                     correctAnswer: 'Prioritize tasks, communicate your capacity issues, and propose solutions to your manager',
                     explanation: 'This demonstrates self-awareness, proactive communication, and problem-solving skills.'
@@ -350,18 +350,18 @@ export async function POST(request: Request) {
                     options: [
                       'Use the same detailed technical language you would with your development team',
                       'Adapt your message using relevant analogies and visual aids, focusing on business impact',
-                      'Keep the presentation brief and avoid details since they won't understand anyway',
+                      'Keep the presentation brief and avoid details since they won\'t understand anyway',
                       'Ask a non-technical colleague to present on your behalf'
                     ],
                     correctAnswer: 'Adapt your message using relevant analogies and visual aids, focusing on business impact',
-                    explanation: 'This approach bridges the knowledge gap while respecting the audience's need for meaningful information.'
+                    explanation: 'This approach bridges the knowledge gap while respecting the audience\'s need for meaningful information.'
                   },
                   {
                     question: "A client has misunderstood your email and is upset about something you didn\'t say. How do you respond?",
                     options: [
                       'Forward them the original email and highlight what you actually said',
                       'Acknowledge their concerns, clarify your message, and suggest a call to resolve any remaining misunderstandings',
-                      'Tell them they've misunderstood and should read more carefully',
+                      'Tell them they\'ve misunderstood and should read more carefully',
                       'Escalate to your manager to handle the communication issue'
                     ],
                     correctAnswer: 'Acknowledge their concerns, clarify your message, and suggest a call to resolve any remaining misunderstandings',
@@ -385,11 +385,11 @@ export async function POST(request: Request) {
                     options: [
                       'Report them to the manager immediately',
                       'Take over their tasks to ensure timely completion',
-                      'Have a private conversation to understand challenges they're facing and explore solutions',
+                      'Have a private conversation to understand challenges they\'re facing and explore solutions',
                       'Publicly address the issue in a team meeting to create peer pressure'
                     ],
-                    correctAnswer: 'Have a private conversation to understand challenges they're facing and explore solutions',
-                    explanation: 'This approach respects the colleague while addressing the impact on the team's performance.'
+                    correctAnswer: 'Have a private conversation to understand challenges they\'re facing and explore solutions',
+                    explanation: 'This approach respects the colleague while addressing the impact on the team\'s performance.'
                   }
                 ]
               };
@@ -729,7 +729,7 @@ export async function POST(request: Request) {
                   'Work longer hours until everything is complete',
                   'Prioritize tasks, communicate your capacity issues, and propose solutions to your manager',
                   'Complete only the most visible tasks and hope no one notices the rest',
-                  'Tell your manager you can't handle the pressure and need fewer responsibilities'
+                  'Tell your manager you can\'t handle the pressure and need fewer responsibilities'
                 ],
                 correctAnswer: 'Prioritize tasks, communicate your capacity issues, and propose solutions to your manager',
                 explanation: 'This demonstrates self-awareness, proactive communication, and problem-solving skills.'
@@ -741,18 +741,18 @@ export async function POST(request: Request) {
                 options: [
                   'Use the same detailed technical language you would with your development team',
                   'Adapt your message using relevant analogies and visual aids, focusing on business impact',
-                  'Keep the presentation brief and avoid details since they won't understand anyway',
+                  'Keep the presentation brief and avoid details since they won\'t understand anyway',
                   'Ask a non-technical colleague to present on your behalf'
                 ],
                 correctAnswer: 'Adapt your message using relevant analogies and visual aids, focusing on business impact',
-                explanation: 'This approach bridges the knowledge gap while respecting the audience's need for meaningful information.'
+                explanation: 'This approach bridges the knowledge gap while respecting the audience\'s need for meaningful information.'
               },
               {
                 question: "A client has misunderstood your email and is upset about something you didn\'t say. How do you respond?",
                 options: [
                   'Forward them the original email and highlight what you actually said',
                   'Acknowledge their concerns, clarify your message, and suggest a call to resolve any remaining misunderstandings',
-                  'Tell them they've misunderstood and should read more carefully',
+                  'Tell them they\'ve misunderstood and should read more carefully',
                   'Escalate to your manager to handle the communication issue'
                 ],
                 correctAnswer: 'Acknowledge their concerns, clarify your message, and suggest a call to resolve any remaining misunderstandings',
@@ -776,11 +776,11 @@ export async function POST(request: Request) {
                 options: [
                   'Report them to the manager immediately',
                   'Take over their tasks to ensure timely completion',
-                  'Have a private conversation to understand challenges they're facing and explore solutions',
+                  'Have a private conversation to understand challenges they\'re facing and explore solutions',
                   'Publicly address the issue in a team meeting to create peer pressure'
                 ],
-                correctAnswer: 'Have a private conversation to understand challenges they're facing and explore solutions',
-                explanation: 'This approach respects the colleague while addressing the impact on the team's performance.'
+                correctAnswer: 'Have a private conversation to understand challenges they\'re facing and explore solutions',
+                explanation: 'This approach respects the colleague while addressing the impact on the team\'s performance.'
               }
             ]
           };
