@@ -15,6 +15,10 @@ export interface AssessmentResult {
   userId: string;
   timestamp: string;
   formData: FormData;
+  type: QuestionType;
+  category?: EmployabilityCategory;
+  questions: Question[];
+  answers: Record<string, string | null>;
   scores: {
     aptitude: number;
     programming: number;
@@ -81,6 +85,26 @@ export interface AssessmentResult {
       softSkills: number;
       overallGap: number;
     };
+  };
+}
+
+export interface AssessmentReport {
+  summary: string;
+  employabilityScore: number;
+  aptitudeScore: number;
+  programmingScore: number;
+  overallScore: number;
+  skillReadinessLevel: string;
+  strengths: string[];
+  areasForImprovement: string[];
+  recommendedSkills: string[];
+  recommendedCourses: string[];
+  careerPaths: string[];
+  nextSteps: string;
+  detailedFeedback: {
+    aptitude: string;
+    programming: string;
+    employability: string;
   };
 }
 

@@ -17,7 +17,7 @@ export default function TestQuestions() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/questions/groq', {
+      const response = await fetch('/api/questions/openai', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -45,7 +45,7 @@ export default function TestQuestions() {
   return (
     <div className="container mx-auto p-4 max-w-4xl">
       <h1 className="text-2xl font-bold mb-4">Assessment Question Generator</h1>
-      <p className="text-gray-600 mb-6">Using Groq LLM (Llama 70B) for high-quality question generation</p>
+      <p className="text-gray-600 mb-6">Using OpenAI GPT-3.5 for high-quality question generation</p>
       
       <div className="flex flex-wrap gap-4 mb-6">
         <Button

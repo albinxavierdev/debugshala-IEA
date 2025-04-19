@@ -44,9 +44,11 @@ export default function AssessmentForm() {
 
   const domainOptions = [
     { id: "web-development", label: "Web Development" },
+    { id: "front-end-development", label: "Front End Development" },
     { id: "mobile-development", label: "Mobile Development" },
     { id: "ai-ml", label: "AI/ML" },
     { id: "data-science", label: "Data Science" },
+    { id: "data-analytics", label: "Data Analytics" },
     { id: "devops", label: "DevOps" },
     { id: "cybersecurity", label: "Cybersecurity" },
     { id: "cloud-computing", label: "Cloud Computing" },
