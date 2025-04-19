@@ -73,7 +73,7 @@ export default function TestPage() {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
+  }, [toast]);
 
   const currentSectionQuestions = questions.filter(q => {
     switch (sections[currentSection].type) {

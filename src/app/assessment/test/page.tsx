@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { assessmentService } from '@/lib/assessment-service';
 import { Navbar } from '@/components/ui/navbar';
@@ -94,229 +94,7 @@ export default function AssessmentTest() {
     }
   ]);
 
-  useEffect(() => {
-    // Initialize assessment
-    const initialize = async () => {
-      setLoading(true);
-      try {
-        // Get user data from the assessment service 
-        const formData = assessmentService.getFormData();
-        const storage = getLocalStorage();
-        
-        if (formData) {
-          setUserName(formData.name);
-        } else if (storage) {
-          const storedName = storage.getItem('debugshala_user_name');
-          if (storedName) setUserName(storedName);
-        }
-
-        // Load questions for the first section
-        await loadQuestionsForSection(0);
-      } catch (error) {
-        console.error('Error initializing assessment:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    initialize();
-
-    // Set up timer
-    const timer = setInterval(() => {
-      setTimeRemaining(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          // Auto-submit when time expires
-          handleTestComplete();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  const loadQuestionsForSection = async (sectionIndex: number) => {
-    setQuestionsLoading(true);
-    
-    try {
-      const section = sections[sectionIndex];
-      // Set loading state for this specific section
-      setSectionLoading(prev => ({...prev, [section.id]: true}));
-      
-      // Only load questions if we haven't already
-      if (section.questions.length === 0) {
-        const formData = assessmentService.getFormData();
-        
-        if (section.type === 'employability' && section.categories) {
-          // For employability section, load personalized questions for each category
-          const allQuestions: Question[] = [];
-          
-          // Create requests for all categories in parallel
-          const promises = section.categories.map(async (category) => {
-            try {
-              console.log(`Requesting ${category.name} questions...`);
-              const response = await fetch('/api/questions/openai', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  type: section.type,
-                  category: category.id,
-                  formData: formData,
-                  userId: assessmentService.getUserId(),
-                  questionCount: 2 // Request 2 questions per category (changed from 5)
-                }),
-              });
-              
-              if (!response.ok) {
-                throw new Error(`Failed to load ${category.name} questions: ${response.status}`);
-              }
-              
-              const data = await response.json();
-              console.log(`Loaded ${data.questions?.length || 0} questions for ${category.name}`);
-              
-              // Add category name to each question for display
-              return (data.questions || []).map((q: Question) => ({ 
-                ...q, 
-                categoryName: category.name 
-              }));
-            } catch (error) {
-              console.error(`Error loading ${category.name} questions:`, error);
-              // Just return empty array instead of fallback questions
-              return [];
-            }
-          });
-          
-          // Wait for all requests to complete
-          const questionsByCategory = await Promise.all(promises);
-          
-          // Flatten the array of arrays
-          questionsByCategory.forEach(questions => {
-            if (questions && Array.isArray(questions)) {
-              allQuestions.push(...questions);
-            }
-          });
-          
-          console.log(`Total questions for ${section.title}: ${allQuestions.length}`);
-          
-          // Update the section with all questions
-          const updatedSections = [...sections];
-          updatedSections[sectionIndex] = {
-            ...section,
-            questions: allQuestions
-          };
-          
-          setSections(updatedSections);
-        } else {
-          // For other sections, load questions as before
-          console.log(`Requesting questions for ${section.title}...`);
-          const response = await fetch('/api/questions/openai', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              type: section.type,
-              formData: formData,
-              userId: assessmentService.getUserId()
-            }),
-          });
-
-          if (!response.ok) {
-            throw new Error('Failed to load questions');
-          }
-
-          const data = await response.json();
-          console.log(`Received ${data.questions?.length || 0} questions for ${section.title}`);
-          
-          // Debug: Log the actual first question to see what's being returned
-          if (data.questions && data.questions.length > 0) {
-            console.log('First question sample:', JSON.stringify(data.questions[0]));
-          }
-          
-          // Update the section with the loaded questions - no fallback
-          const updatedSections = [...sections];
-          updatedSections[sectionIndex] = {
-            ...section,
-            questions: data.questions || []
-          };
-          
-          setSections(updatedSections);
-          console.log(`Loaded ${data.questions?.length || 0} questions for ${section.title}`);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading questions:', error);
-      // Don't load fallback questions, just keep section in loading state
-      // Let the UI handle the loading state
-    } finally {
-      setQuestionsLoading(false);
-      // Clear loading state for this section
-      setSectionLoading(prev => {
-        const newState = {...prev};
-        if (sections[sectionIndex]) {
-          newState[sections[sectionIndex].id] = false;
-        }
-        return newState;
-      });
-    }
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const handleAnswerSelect = (questionId: string, answer: string) => {
-    setUserAnswers({
-      ...userAnswers,
-      [questionId]: answer
-    });
-  };
-
-  const handleNextQuestion = () => {
-    const currentSection = sections[currentSectionIndex];
-    const currentQuestion = currentSection?.questions[currentQuestionIndex];
-    
-    if (currentQuestionIndex < currentSection.questions.length - 1) {
-      // Move to next question in this section
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else {
-      // Mark this section as completed
-      const updatedSections = [...sections];
-      updatedSections[currentSectionIndex].completed = true;
-      setSections(updatedSections);
-
-      // Move to next section if available
-      if (currentSectionIndex < sections.length - 1) {
-        setCurrentSectionIndex(currentSectionIndex + 1);
-        setCurrentQuestionIndex(0);
-        // Load questions for the next section
-        loadQuestionsForSection(currentSectionIndex + 1);
-      } else {
-        // All sections completed
-        handleTestComplete();
-      }
-    }
-  };
-
-  const handlePreviousQuestion = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1);
-    } else if (currentSectionIndex > 0) {
-      // Move to previous section
-      setCurrentSectionIndex(currentSectionIndex - 1);
-      // Move to the last question of the previous section
-      const prevSection = sections[currentSectionIndex - 1];
-      setCurrentQuestionIndex(prevSection.questions.length - 1);
-    }
-  };
-
-  const handleTestComplete = async () => {
+  const handleTestComplete = useCallback(async () => {
     setLoading(true);
     try {
       const storage = getLocalStorage();
@@ -490,6 +268,228 @@ export default function AssessmentTest() {
     } finally {
       setLoading(false);
     }
+  }, [sections, userAnswers, router, userName]);
+
+  const loadQuestionsForSection = useCallback(async (sectionIndex: number) => {
+    setQuestionsLoading(true);
+    
+    try {
+      const section = sections[sectionIndex];
+      // Set loading state for this specific section
+      setSectionLoading(prev => ({...prev, [section.id]: true}));
+      
+      // Only load questions if we haven't already
+      if (section.questions.length === 0) {
+        const formData = assessmentService.getFormData();
+        
+        if (section.type === 'employability' && section.categories) {
+          // For employability section, load personalized questions for each category
+          const allQuestions: Question[] = [];
+          
+          // Create requests for all categories in parallel
+          const promises = section.categories.map(async (category) => {
+            try {
+              console.log(`Requesting ${category.name} questions...`);
+              const response = await fetch('/api/questions/openai', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  type: section.type,
+                  category: category.id,
+                  formData: formData,
+                  userId: assessmentService.getUserId(),
+                  questionCount: 2 // Request 2 questions per category (changed from 5)
+                }),
+              });
+              
+              if (!response.ok) {
+                throw new Error(`Failed to load ${category.name} questions: ${response.status}`);
+              }
+              
+              const data = await response.json();
+              console.log(`Loaded ${data.questions?.length || 0} questions for ${category.name}`);
+              
+              // Add category name to each question for display
+              return (data.questions || []).map((q: Question) => ({ 
+                ...q, 
+                categoryName: category.name 
+              }));
+            } catch (error) {
+              console.error(`Error loading ${category.name} questions:`, error);
+              // Just return empty array instead of fallback questions
+              return [];
+            }
+          });
+          
+          // Wait for all requests to complete
+          const questionsByCategory = await Promise.all(promises);
+          
+          // Flatten the array of arrays
+          questionsByCategory.forEach(questions => {
+            if (questions && Array.isArray(questions)) {
+              allQuestions.push(...questions);
+            }
+          });
+          
+          console.log(`Total questions for ${section.title}: ${allQuestions.length}`);
+          
+          // Update the section with all questions
+          const updatedSections = [...sections];
+          updatedSections[sectionIndex] = {
+            ...section,
+            questions: allQuestions
+          };
+          
+          setSections(updatedSections);
+        } else {
+          // For other sections, load questions as before
+          console.log(`Requesting questions for ${section.title}...`);
+          const response = await fetch('/api/questions/openai', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              type: section.type,
+              formData: formData,
+              userId: assessmentService.getUserId()
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to load questions');
+          }
+
+          const data = await response.json();
+          console.log(`Received ${data.questions?.length || 0} questions for ${section.title}`);
+          
+          // Debug: Log the actual first question to see what's being returned
+          if (data.questions && data.questions.length > 0) {
+            console.log('First question sample:', JSON.stringify(data.questions[0]));
+          }
+          
+          // Update the section with the loaded questions - no fallback
+          const updatedSections = [...sections];
+          updatedSections[sectionIndex] = {
+            ...section,
+            questions: data.questions || []
+          };
+          
+          setSections(updatedSections);
+          console.log(`Loaded ${data.questions?.length || 0} questions for ${section.title}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading questions:', error);
+      // Don't load fallback questions, just keep section in loading state
+      // Let the UI handle the loading state
+    } finally {
+      setQuestionsLoading(false);
+      // Clear loading state for this section
+      setSectionLoading(prev => {
+        const newState = {...prev};
+        if (sections[sectionIndex]) {
+          newState[sections[sectionIndex].id] = false;
+        }
+        return newState;
+      });
+    }
+  }, [sections]);
+
+  useEffect(() => {
+    // Initialize assessment
+    const initialize = async () => {
+      setLoading(true);
+      try {
+        // Get user data from the assessment service 
+        const formData = assessmentService.getFormData();
+        const storage = getLocalStorage();
+        
+        if (formData) {
+          setUserName(formData.name);
+        } else if (storage) {
+          const storedName = storage.getItem('debugshala_user_name');
+          if (storedName) setUserName(storedName);
+        }
+
+        // Load questions for the first section
+        await loadQuestionsForSection(0);
+      } catch (error) {
+        console.error('Error initializing assessment:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    initialize();
+
+    // Set up timer
+    const timer = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          // Auto-submit when time expires
+          handleTestComplete();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [handleTestComplete, loadQuestionsForSection]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleAnswerSelect = (questionId: string, answer: string) => {
+    setUserAnswers({
+      ...userAnswers,
+      [questionId]: answer
+    });
+  };
+
+  const handleNextQuestion = () => {
+    const currentSection = sections[currentSectionIndex];
+    const currentQuestion = currentSection?.questions[currentQuestionIndex];
+    
+    if (currentQuestionIndex < currentSection.questions.length - 1) {
+      // Move to next question in this section
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+      // Mark this section as completed
+      const updatedSections = [...sections];
+      updatedSections[currentSectionIndex].completed = true;
+      setSections(updatedSections);
+
+      // Move to next section if available
+      if (currentSectionIndex < sections.length - 1) {
+        setCurrentSectionIndex(currentSectionIndex + 1);
+        setCurrentQuestionIndex(0);
+        // Load questions for the next section
+        loadQuestionsForSection(currentSectionIndex + 1);
+      } else {
+        // All sections completed
+        handleTestComplete();
+      }
+    }
+  };
+
+  const handlePreviousQuestion = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    } else if (currentSectionIndex > 0) {
+      // Move to previous section
+      setCurrentSectionIndex(currentSectionIndex - 1);
+      // Move to the last question of the previous section
+      const prevSection = sections[currentSectionIndex - 1];
+      setCurrentQuestionIndex(prevSection.questions.length - 1);
+    }
   };
 
   const currentSection = sections[currentSectionIndex];
@@ -509,7 +509,7 @@ export default function AssessmentTest() {
     if (sections.length > 0 && currentSectionIndex < sections.length) {
       loadQuestionsForSection(currentSectionIndex);
     }
-  }, [currentSectionIndex]);
+  }, [currentSectionIndex, loadQuestionsForSection, sections]);
 
   if (loading) {
     return (
